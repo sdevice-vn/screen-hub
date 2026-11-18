@@ -1,0 +1,970 @@
+{
+ "version": 1,
+ "icons": [
+  {
+   "name": "mdi:lightbulb",
+   "cp": 983861,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:lightbulb-outline",
+   "cp": 983862,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:lightbulb-group",
+   "cp": 987731,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:ceiling-light",
+   "cp": 984937,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:ceiling-light-outline",
+   "cp": 989127,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:floor-lamp",
+   "cp": 985309,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:lamp",
+   "cp": 984757,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:desk-lamp",
+   "cp": 985439,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:wall-sconce",
+   "cp": 985372,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:wall-sconce-flat",
+   "cp": 985373,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:led-strip",
+   "cp": 985046,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:led-strip-variant",
+   "cp": 987217,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:spotlight",
+   "cp": 984264,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:spotlight-beam",
+   "cp": 984265,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:light-switch",
+   "cp": 985470,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:lightbulb-on",
+   "cp": 984808,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:lightbulb-off",
+   "cp": 986703,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:string-lights",
+   "cp": 987834,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:chandelier",
+   "cp": 989075,
+   "cat": "Chiếu sáng"
+  },
+  {
+   "name": "mdi:power",
+   "cp": 984101,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:power-plug",
+   "cp": 984741,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:power-socket",
+   "cp": 984103,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:power-socket-eu",
+   "cp": 985063,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:power-socket-us",
+   "cp": 985065,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:flash",
+   "cp": 983617,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:lightning-bolt",
+   "cp": 988171,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:battery",
+   "cp": 983161,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:battery-charging",
+   "cp": 983172,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:solar-panel",
+   "cp": 986523,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:solar-power",
+   "cp": 985714,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:ev-station",
+   "cp": 984561,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:transmission-tower",
+   "cp": 986430,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:meter-electric",
+   "cp": 989783,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:current-ac",
+   "cp": 988288,
+   "cat": "Ổ cắm & điện"
+  },
+  {
+   "name": "mdi:toggle-switch",
+   "cp": 984353,
+   "cat": "Công tắc"
+  },
+  {
+   "name": "mdi:toggle-switch-off",
+   "cp": 984354,
+   "cat": "Công tắc"
+  },
+  {
+   "name": "mdi:light-switch-off",
+   "cp": 989732,
+   "cat": "Công tắc"
+  },
+  {
+   "name": "mdi:gesture-tap-button",
+   "cp": 987816,
+   "cat": "Công tắc"
+  },
+  {
+   "name": "mdi:radiobox-marked",
+   "cp": 984126,
+   "cat": "Công tắc"
+  },
+  {
+   "name": "mdi:button-pointer",
+   "cp": 990032,
+   "cat": "Công tắc"
+  },
+  {
+   "name": "mdi:fan",
+   "cp": 983568,
+   "cat": "Quạt & điều hòa"
+  },
+  {
+   "name": "mdi:fan-off",
+   "cp": 985117,
+   "cat": "Quạt & điều hòa"
+  },
+  {
+   "name": "mdi:air-conditioner",
+   "cp": 983067,
+   "cat": "Quạt & điều hòa"
+  },
+  {
+   "name": "mdi:air-filter",
+   "cp": 986435,
+   "cat": "Quạt & điều hòa"
+  },
+  {
+   "name": "mdi:air-purifier",
+   "cp": 986436,
+   "cat": "Quạt & điều hòa"
+  },
+  {
+   "name": "mdi:hvac",
+   "cp": 987986,
+   "cat": "Quạt & điều hòa"
+  },
+  {
+   "name": "mdi:heat-wave",
+   "cp": 989765,
+   "cat": "Quạt & điều hòa"
+  },
+  {
+   "name": "mdi:snowflake",
+   "cp": 984855,
+   "cat": "Quạt & điều hòa"
+  },
+  {
+   "name": "mdi:thermostat",
+   "cp": 983955,
+   "cat": "Quạt & điều hòa"
+  },
+  {
+   "name": "mdi:radiator",
+   "cp": 984120,
+   "cat": "Quạt & điều hòa"
+  },
+  {
+   "name": "mdi:radiator-off",
+   "cp": 985816,
+   "cat": "Quạt & điều hòa"
+  },
+  {
+   "name": "mdi:sun-thermometer",
+   "cp": 989398,
+   "cat": "Quạt & điều hòa"
+  },
+  {
+   "name": "mdi:coolant-temperature",
+   "cp": 984008,
+   "cat": "Quạt & điều hòa"
+  },
+  {
+   "name": "mdi:door",
+   "cp": 985114,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:door-open",
+   "cp": 985116,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:door-closed",
+   "cp": 985115,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:garage",
+   "cp": 984793,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:garage-open",
+   "cp": 984794,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:gate",
+   "cp": 983705,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:window-closed",
+   "cp": 984494,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:window-open",
+   "cp": 984497,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:blinds",
+   "cp": 983212,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:blinds-open",
+   "cp": 987153,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:curtains",
+   "cp": 989254,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:curtains-closed",
+   "cp": 989255,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:roller-shade",
+   "cp": 989803,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:roller-shade-closed",
+   "cp": 989804,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:lock",
+   "cp": 983870,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:lock-open-variant",
+   "cp": 987078,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:key-variant",
+   "cp": 983819,
+   "cat": "Cửa & rèm"
+  },
+  {
+   "name": "mdi:thermometer",
+   "cp": 984335,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:thermometer-high",
+   "cp": 987330,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:thermometer-low",
+   "cp": 987331,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:water-percent",
+   "cp": 984462,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:water-thermometer",
+   "cp": 989829,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:gauge",
+   "cp": 983706,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:molecule-co2",
+   "cp": 985060,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:smoke-detector",
+   "cp": 983954,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:smoke-detector-variant",
+   "cp": 989195,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:motion-sensor",
+   "cp": 986513,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:eye",
+   "cp": 983560,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:human-greeting-variant",
+   "cp": 984650,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:run",
+   "cp": 984846,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:walk",
+   "cp": 984451,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:radar",
+   "cp": 984119,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:leak",
+   "cp": 986583,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:weather-windy",
+   "cp": 984477,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:brightness-5",
+   "cp": 983262,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:brightness-6",
+   "cp": 983263,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:weather-sunny",
+   "cp": 984473,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:weather-night",
+   "cp": 984468,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:weather-cloudy",
+   "cp": 984464,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:weather-rainy",
+   "cp": 984471,
+   "cat": "Cảm biến"
+  },
+  {
+   "name": "mdi:shield-home",
+   "cp": 984714,
+   "cat": "An ninh"
+  },
+  {
+   "name": "mdi:shield-lock",
+   "cp": 985501,
+   "cat": "An ninh"
+  },
+  {
+   "name": "mdi:shield-check",
+   "cp": 984421,
+   "cat": "An ninh"
+  },
+  {
+   "name": "mdi:cctv",
+   "cp": 985006,
+   "cat": "An ninh"
+  },
+  {
+   "name": "mdi:camera",
+   "cp": 983296,
+   "cat": "An ninh"
+  },
+  {
+   "name": "mdi:doorbell",
+   "cp": 987878,
+   "cat": "An ninh"
+  },
+  {
+   "name": "mdi:bell",
+   "cp": 983194,
+   "cat": "An ninh"
+  },
+  {
+   "name": "mdi:bell-ring",
+   "cp": 983198,
+   "cat": "An ninh"
+  },
+  {
+   "name": "mdi:alarm-light",
+   "cp": 984975,
+   "cat": "An ninh"
+  },
+  {
+   "name": "mdi:alert",
+   "cp": 983078,
+   "cat": "An ninh"
+  },
+  {
+   "name": "mdi:fire",
+   "cp": 983608,
+   "cat": "An ninh"
+  },
+  {
+   "name": "mdi:fire-alert",
+   "cp": 988631,
+   "cat": "An ninh"
+  },
+  {
+   "name": "mdi:home",
+   "cp": 983772,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:home-outline",
+   "cp": 984737,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:sofa",
+   "cp": 984249,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:bed",
+   "cp": 983779,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:bed-double",
+   "cp": 987092,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:bed-king",
+   "cp": 987090,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:desk",
+   "cp": 987705,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:silverware-fork-knife",
+   "cp": 985712,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:stove",
+   "cp": 984286,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:fridge",
+   "cp": 983696,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:fridge-outline",
+   "cp": 983695,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:microwave",
+   "cp": 986265,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:toilet",
+   "cp": 985515,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:shower",
+   "cp": 985504,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:bathtub",
+   "cp": 989208,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:washing-machine",
+   "cp": 984874,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:television",
+   "cp": 984322,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:television-ambient-light",
+   "cp": 987990,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:stairs",
+   "cp": 984269,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:balcony",
+   "cp": 989207,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:garage-variant",
+   "cp": 987859,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:pine-tree",
+   "cp": 984069,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:flower-outline",
+   "cp": 985584,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:sprinkler",
+   "cp": 987231,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:sprinkler-variant",
+   "cp": 987232,
+   "cat": "Phòng"
+  },
+  {
+   "name": "mdi:speaker",
+   "cp": 984259,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:speaker-wireless",
+   "cp": 984863,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:music",
+   "cp": 984922,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:cast",
+   "cp": 983320,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:robot-vacuum",
+   "cp": 984845,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:robot-mower",
+   "cp": 987639,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:coffee-maker",
+   "cp": 987295,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:kettle",
+   "cp": 984570,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:water-boiler",
+   "cp": 987026,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:dishwasher",
+   "cp": 985772,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:iron",
+   "cp": 989220,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:lock-smart",
+   "cp": 985266,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:router-wireless",
+   "cp": 984169,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:router-network",
+   "cp": 987271,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:wifi",
+   "cp": 984489,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:cellphone",
+   "cp": 983324,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:laptop",
+   "cp": 983842,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:printer-3d",
+   "cp": 984107,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:garage-alert",
+   "cp": 985202,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:water-pump",
+   "cp": 984463,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:water-pump-off",
+   "cp": 987027,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:pool",
+   "cp": 984582,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:hot-tub",
+   "cp": 985128,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:car",
+   "cp": 983307,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:car-electric",
+   "cp": 985964,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:ev-plug-type2",
+   "cp": 988446,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:scooter",
+   "cp": 988605,
+   "cat": "Thiết bị"
+  },
+  {
+   "name": "mdi:play",
+   "cp": 984074,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:pause",
+   "cp": 984036,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:stop",
+   "cp": 984283,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:movie-open",
+   "cp": 987086,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:sunglasses",
+   "cp": 984288,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:sleep",
+   "cp": 984242,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:sleep-off",
+   "cp": 984243,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:exit-run",
+   "cp": 985672,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:home-export-outline",
+   "cp": 987035,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:home-import-outline",
+   "cp": 987036,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:account-group",
+   "cp": 985161,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:shield-moon",
+   "cp": 989224,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:bed-clock",
+   "cp": 990100,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:party-popper",
+   "cp": 987222,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:silverware-variant",
+   "cp": 984230,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:script-text-play",
+   "cp": 988967,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:rocket-launch",
+   "cp": 988382,
+   "cat": "Cảnh & hành động"
+  },
+  {
+   "name": "mdi:star",
+   "cp": 984270,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:heart",
+   "cp": 983761,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:bookmark",
+   "cp": 983232,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:flag",
+   "cp": 983611,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:tag",
+   "cp": 984313,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:information",
+   "cp": 983804,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:help-circle",
+   "cp": 983767,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:plus",
+   "cp": 984085,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:minus",
+   "cp": 983924,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:check",
+   "cp": 983340,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:close",
+   "cp": 983382,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:cog",
+   "cp": 984211,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:refresh",
+   "cp": 984144,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:clock-outline",
+   "cp": 983376,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:calendar",
+   "cp": 983277,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:timer-outline",
+   "cp": 984347,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:bolt",
+   "cp": 986547,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:cloud",
+   "cp": 983391,
+   "cat": "Khác"
+  },
+  {
+   "name": "mdi:map-marker",
+   "cp": 983886,
+   "cat": "Khác"
+  }
+ ]
+}

@@ -1,0 +1,11 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {"title": "Thêm màn hình", "description": "Nhập địa chỉ IP của màn hình. Để trống nếu chưa có màn hình và chỉ muốn xem thử giao diện cấu hình.", "data": {"host": "Địa chỉ IP"}},
+      "pair": {"title": "Ghép cặp {name}", "description": "Nhập mã 6 số đang hiển thị trên màn hình.", "data": {"code": "Mã ghép cặp"}}
+    },
+    "error": {"cannot_connect": "Không kết nối được màn hình", "invalid_code": "Mã ghép cặp sai hoặc đã hết hạn"},
+    "abort": {"already_configured": "Màn hình này đã được thêm", "cannot_connect": "Không kết nối được màn hình"}
+  }
+}
