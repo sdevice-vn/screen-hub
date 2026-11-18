@@ -6,8 +6,11 @@
 A central control touchscreen for Home Assistant, built on the **ESP32-S3 JC3248W535** 3.5" display.
 Pair the screen with Home Assistant, then design its pages from the Home Assistant app: floors, rooms, devices and icons.
 
-![Floor 1](https://raw.githubusercontent.com/sdevice-vn/screen-hub/main/docs/floor1.png)
-![Floor 1, page 2](https://raw.githubusercontent.com/sdevice-vn/screen-hub/main/docs/floor1_page2.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/sdevice-vn/screen-hub/main/docs/floor1.png" width="32%" alt="Floor 1">
+  <img src="https://raw.githubusercontent.com/sdevice-vn/screen-hub/main/docs/climate.png" width="32%" alt="Air conditioner">
+  <img src="https://raw.githubusercontent.com/sdevice-vn/screen-hub/main/docs/cover.png" width="32%" alt="Curtain">
+</p>
 
 *(Images are renders of the UI from a simulator.)*
 
