@@ -12,9 +12,10 @@ from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.storage import Store
 
 from . import light as light_util
+from . import media as media_util
 from .const import (CLIMATE_DOMAIN, COVER_DOMAIN, COVER_FEATURE_SET_POSITION, DOMAIN, LIGHT_DOMAIN,
                     LIGHT_EFFECT, LIGHT_EFFECT_INTERVAL, LIGHT_EFFECT_MAX, LIGHT_EFFECT_MIN, LIGHT_EFFECT_STEP,
-                    STORAGE_VERSION)
+                    MEDIA_DOMAIN, STORAGE_VERSION)
 from .layout import async_get_icons, build_device_messages, entity_ids, validate_layout
 
 _LOGGER = logging.getLogger(__name__)
@@ -101,6 +102,8 @@ class ScreenHub:
             msg["ha"] = a.get("hvac_action")
         elif entity_id.split(".", 1)[0] == LIGHT_DOMAIN:
             msg.update(light_util.state_fields(st.state, st.attributes, entity_id in self._effects))
+        elif entity_id.split(".", 1)[0] == MEDIA_DOMAIN:
+            msg.update(media_util.state_fields(st.state, st.attributes))
         return msg
 
     async def async_push_layout(self) -> None:
@@ -217,6 +220,13 @@ class ScreenHub:
             if extra is not None:
                 data.update(extra)
                 service = ("light", "turn_on")
+        elif domain == MEDIA_DOMAIN:
+            st = self.hass.states.get(entity_id)
+            if st is not None:
+                svc = media_util.service_for(st.state, st.attributes, action, value)
+                if svc is not None:
+                    service = ("media_player", svc[0])
+                    data.update(svc[1])
         elif action == "toggle":
             if domain == "lock":
                 st = self.hass.states.get(entity_id)

@@ -1,6 +1,6 @@
 /* Panel cấu hình Screen Hub: Tầng -> Phòng -> Thiết bị + chọn icon. Không cần build, chỉ JS thuần. */
 const SUPPORTED = ["switch","light","fan","input_boolean","automation","lock","cover",
-                   "scene","script","button","sensor","binary_sensor","climate","weather"];
+                   "scene","script","button","sensor","binary_sensor","climate","weather","media_player"];
 const COVER_STYLES = [["roller", "Cửa cuốn"], ["curtain_both", "Rèm 2 bên"],
                       ["curtain_left", "Rèm 1 bên (đặt bên trái)"], ["curtain_right", "Rèm 1 bên (đặt bên phải)"]];
 const SENSOR_DOMAINS = ["sensor", "binary_sensor", "weather"];

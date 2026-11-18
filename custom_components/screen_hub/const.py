@@ -26,7 +26,8 @@ COVER_DOMAIN = "cover"
 ACTION_DOMAINS = {"scene", "script", "button"}
 SENSOR_DOMAINS = {"sensor", "binary_sensor", "weather"}
 CLIMATE_DOMAIN = "climate"
-SUPPORTED_DOMAINS = TOGGLE_DOMAINS | ACTION_DOMAINS | SENSOR_DOMAINS | {COVER_DOMAIN, CLIMATE_DOMAIN}
+MEDIA_DOMAIN = "media_player"        # loa / trình phát nhạc: thẻ màu tím, chạm để mở giao diện điều khiển
+SUPPORTED_DOMAINS = TOGGLE_DOMAINS | ACTION_DOMAINS | SENSOR_DOMAINS | {COVER_DOMAIN, CLIMATE_DOMAIN, MEDIA_DOMAIN}
 
 # Icon mặc định theo domain khi người dùng chưa chọn
 DEFAULT_ICON = {
@@ -34,7 +35,7 @@ DEFAULT_ICON = {
     "cover": "mdi:blinds", "lock": "mdi:lock", "scene": "mdi:play",
     "script": "mdi:play", "button": "mdi:gesture-tap-button",
     "sensor": "mdi:thermometer", "binary_sensor": "mdi:eye",
-    "climate": "mdi:thermostat", "input_boolean": "mdi:toggle-switch",
+    "climate": "mdi:thermostat", "media_player": "mdi:speaker", "input_boolean": "mdi:toggle-switch",
     "automation": "mdi:cog", "weather": "mdi:weather-cloudy",
 }
 

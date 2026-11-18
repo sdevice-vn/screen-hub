@@ -9,6 +9,7 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant
 
 from .const import (ACTION_DOMAINS, CARD_WIDTHS, CLIMATE_DOMAIN, COVER_DOMAIN, COVER_STYLES, CURTAIN_CLASSES, DEFAULT_ICON, ICONS_KEY, MAX_DEVICES_PER_ROOM, MAX_DEVICES_TOTAL,
+                    MEDIA_DOMAIN,
                     MAX_FLOORS, MAX_NAME_LEN, MAX_ROOMS_PER_FLOOR, SUPPORTED_DOMAINS,
                     TOGGLE_DOMAINS)
 
@@ -81,6 +82,8 @@ def tile_type(entity_id: str) -> str:
         return "cover"
     if domain == CLIMATE_DOMAIN:
         return "climate"
+    if domain == MEDIA_DOMAIN:
+        return "media"
     if domain in TOGGLE_DOMAINS:
         return "toggle"
     if domain in ACTION_DOMAINS:
