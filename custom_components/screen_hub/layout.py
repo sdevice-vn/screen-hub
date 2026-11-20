@@ -9,7 +9,7 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant
 
 from .const import (ACTION_DOMAINS, CARD_WIDTHS, CLIMATE_DOMAIN, COVER_DOMAIN, COVER_STYLES, CURTAIN_CLASSES, DEFAULT_ICON, ICONS_KEY, MAX_DEVICES_PER_ROOM, MAX_DEVICES_TOTAL,
-                    MEDIA_DOMAIN,
+                    MEDIA_DOMAIN, WEATHER_DOMAIN, WEATHER_STYLES,
                     MAX_FLOORS, MAX_NAME_LEN, MAX_ROOMS_PER_FLOOR, SUPPORTED_DOMAINS,
                     TOGGLE_DOMAINS)
 
@@ -51,6 +51,7 @@ DEVICE_SCHEMA = vol.Schema({
     vol.Optional("name", default=""): vol.Any("", _name),   # rỗng = dùng friendly_name của HA
     vol.Optional("icon", default=""): str,
     vol.Optional("cover_style", default=""): vol.In(("",) + COVER_STYLES),   # chỉ dùng cho cover.*
+    vol.Optional("weather_style", default="compact"): vol.In(WEATHER_STYLES),   # chỉ dùng cho weather.*
     vol.Optional("width", default=1): vol.In(CARD_WIDTHS),                  # độ rộng thẻ (chỉ dùng cho sensor)
 })
 ROOM_SCHEMA = vol.Schema({
@@ -84,6 +85,8 @@ def tile_type(entity_id: str) -> str:
         return "climate"
     if domain == MEDIA_DOMAIN:
         return "media"
+    if domain == WEATHER_DOMAIN:
+        return "weather"
     if domain in TOGGLE_DOMAINS:
         return "toggle"
     if domain in ACTION_DOMAINS:
@@ -125,6 +128,8 @@ def build_device_layout(layout: dict[str, Any], icons: list[dict[str, Any]],
                 }
                 if dev["t"] == "sensor" and d.get("width", 1) != 1:
                     dev["w"] = int(round(float(d["width"]) * 2))    # đơn vị nửa cột: 3 = ×1.5, 4 = ×2
+                if dev["t"] == "weather" and d.get("weather_style") == "full":
+                    dev["ws"] = "full"                          # mặc định (thu nhỏ) thì không gửi
                 if dev["t"] == "cover":
                     dev["cs"] = d.get("cover_style") or default_cover_style((device_classes or {}).get(eid, ""))
                 devs.append(dev)

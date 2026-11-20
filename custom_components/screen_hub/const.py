@@ -24,10 +24,13 @@ MAX_NAME_LEN = 24
 TOGGLE_DOMAINS = {"switch", "light", "fan", "input_boolean", "automation", "lock"}
 COVER_DOMAIN = "cover"
 ACTION_DOMAINS = {"scene", "script", "button"}
-SENSOR_DOMAINS = {"sensor", "binary_sensor", "weather"}
+SENSOR_DOMAINS = {"sensor", "binary_sensor"}
+WEATHER_DOMAIN = "weather"           # thẻ thời tiết: thu nhỏ (chạm để mở) hoặc toàn màn hình
+WEATHER_STYLES = ("compact", "full")
+WEATHER_REFRESH_S = 20 * 60         # chu kỳ lấy lại dự báo
 CLIMATE_DOMAIN = "climate"
 MEDIA_DOMAIN = "media_player"        # loa / trình phát nhạc: thẻ màu tím, chạm để mở giao diện điều khiển
-SUPPORTED_DOMAINS = TOGGLE_DOMAINS | ACTION_DOMAINS | SENSOR_DOMAINS | {COVER_DOMAIN, CLIMATE_DOMAIN, MEDIA_DOMAIN}
+SUPPORTED_DOMAINS = TOGGLE_DOMAINS | ACTION_DOMAINS | SENSOR_DOMAINS | {WEATHER_DOMAIN, COVER_DOMAIN, CLIMATE_DOMAIN, MEDIA_DOMAIN}
 
 # Icon mặc định theo domain khi người dùng chưa chọn
 DEFAULT_ICON = {

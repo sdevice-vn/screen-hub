@@ -39,11 +39,21 @@ def position(state: str, attrs: Mapping[str, Any], now: datetime | None = None) 
     return int(pos)
 
 
+def title(attrs: Mapping[str, Any]) -> str:
+    """Tên bài: ưu tiên media_title, thiếu thì lấy tên tập/album/kênh, cuối cùng là media_content_id nếu không phải URL."""
+    for k in ("media_title", "media_episode", "media_series_title", "media_album_name", "media_channel", "media_playlist"):
+        v = attrs.get(k)
+        if v:
+            return str(v)
+    cid = str(attrs.get("media_content_id") or "")
+    return "" if not cid or "://" in cid else cid
+
+
 def state_fields(state: str, attrs: Mapping[str, Any], now: datetime | None = None) -> dict[str, Any]:
     vol = _num(attrs.get("volume_level"))
     dur = _num(attrs.get("media_duration"))
     return {
-        "ti": str(attrs.get("media_title") or "")[:MAX_TEXT],                                  # tên bài
+        "ti": title(attrs)[:MAX_TEXT],                                  # tên bài
         "ar": str(attrs.get("media_artist") or attrs.get("media_album_artist")
                   or attrs.get("app_name") or "")[:MAX_TEXT],                                  # ca sĩ / ứng dụng
         "vl": int(round(max(0.0, min(1.0, vol)) * 100)) if vol is not None else -1,           # âm lượng 0..100

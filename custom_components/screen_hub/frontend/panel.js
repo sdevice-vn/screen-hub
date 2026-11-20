@@ -3,7 +3,8 @@ const SUPPORTED = ["switch","light","fan","input_boolean","automation","lock","c
                    "scene","script","button","sensor","binary_sensor","climate","weather","media_player"];
 const COVER_STYLES = [["roller", "Cửa cuốn"], ["curtain_both", "Rèm 2 bên"],
                       ["curtain_left", "Rèm 1 bên (đặt bên trái)"], ["curtain_right", "Rèm 1 bên (đặt bên phải)"]];
-const SENSOR_DOMAINS = ["sensor", "binary_sensor", "weather"];
+const SENSOR_DOMAINS = ["sensor", "binary_sensor"];
+const WEATHER_STYLES = [["compact", "Thu nhỏ"], ["full", "Toàn màn hình"]];
 const CARD_WIDTHS = [[1, "Thẻ ×1"], [1.5, "Thẻ ×1.5"], [2, "Thẻ ×2"]];
 const CURTAIN_CLASSES = ["curtain", "blind", "shade", "awning"];
 const fold = (t) => String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
@@ -203,6 +204,8 @@ class ScreenHubPanel extends HTMLElement {
             <input class="devName" value="${esc(d.name)}" maxlength="24" title="${esc(d.entity_id)}" placeholder="${esc(this._stateName(d.entity_id))}">
             ${d.entity_id.startsWith("cover.") ? `<select class="coverStyle" title="Kiểu hiển thị trên màn hình">${COVER_STYLES.map(([v, t]) =>
               `<option value="${v}" ${(d.cover_style || this._defaultCover(d.entity_id)) === v ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
+            ${d.entity_id.startsWith("weather.") ? `<select class="weatherStyle" title="Kiểu hiển thị trên màn hình">${WEATHER_STYLES.map(([v, t]) =>
+              `<option value="${v}" ${(d.weather_style || "compact") === v ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
             ${SENSOR_DOMAINS.includes(d.entity_id.split(".")[0]) ? `<select class="devWidth" title="Độ rộng thẻ trên màn hình">${CARD_WIDTHS.map(([v, t]) =>
               `<option value="${v}" ${(d.width || 1) === v ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
             <div class="acts">
@@ -287,6 +290,7 @@ class ScreenHubPanel extends HTMLElement {
         if (!this._hass.states[eid] || !SUPPORTED.includes(eid.split(".")[0])) { this.s.msg = "Chọn thiết bị trong danh sách gợi ý"; this._render(); return; }
         const dev = { entity_id: eid, name: "", icon: "" };
         if (eid.startsWith("cover.")) dev.cover_style = this._defaultCover(eid);
+        if (eid.startsWith("weather.")) dev.weather_style = "compact";
         r.devices.push(dev); this._touch(); };
       const add = () => {          // nút "＋ Thêm" / phím Enter: nhập đúng entity_id hoặc chỉ còn 1 gợi ý (Enter: lấy gợi ý đầu)
         const typed = inp.value.trim().toLowerCase(), list = matches();
@@ -302,6 +306,7 @@ class ScreenHubPanel extends HTMLElement {
         const di = +de.dataset.dev, d = r.devices[di];
         de.querySelector(".devName").addEventListener("change", (e) => { d.name = e.target.value.trim(); this._touch(); });
         de.querySelector(".devWidth")?.addEventListener("change", (e) => { d.width = parseFloat(e.target.value); this._touch(); });
+        de.querySelector(".weatherStyle")?.addEventListener("change", (e) => { d.weather_style = e.target.value; this._touch(); });
         de.querySelector(".coverStyle")?.addEventListener("change", (e) => { d.cover_style = e.target.value; this._touch(); });
         de.querySelector(".dUp").addEventListener("click", () => { move(r.devices, di, -1); this._touch(); });
         de.querySelector(".dDown").addEventListener("click", () => { move(r.devices, di, 1); this._touch(); });

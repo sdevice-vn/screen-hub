@@ -13,9 +13,10 @@ from homeassistant.helpers.storage import Store
 
 from . import light as light_util
 from . import media as media_util
+from . import weather as weather_util
 from .const import (CLIMATE_DOMAIN, COVER_DOMAIN, COVER_FEATURE_SET_POSITION, DOMAIN, LIGHT_DOMAIN,
                     LIGHT_EFFECT, LIGHT_EFFECT_INTERVAL, LIGHT_EFFECT_MAX, LIGHT_EFFECT_MIN, LIGHT_EFFECT_STEP,
-                    MEDIA_DOMAIN, STORAGE_VERSION)
+                    MEDIA_DOMAIN, STORAGE_VERSION, WEATHER_DOMAIN, WEATHER_REFRESH_S)
 from .layout import async_get_icons, build_device_messages, entity_ids, validate_layout
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,6 +34,8 @@ class ScreenHub:
         self.clients: set[web.WebSocketResponse] = set()
         self._unsub = None
         self._icons: list[dict[str, Any]] = []            # nạp trong async_load (không đọc file ở __init__)
+        self._forecasts: dict[str, dict[str, list]] = {}  # entity_id -> {"hourly": [...], "daily": [...]}
+        self._wx_task: asyncio.Task | None = None
         self._effects: dict[str, asyncio.Task] = {}      # entity_id -> tác vụ hiệu ứng tăng giảm độ sáng đang chạy
 
     async def async_load(self) -> None:
@@ -45,12 +48,14 @@ class ScreenHub:
             except Exception:  # noqa: BLE001 - layout hỏng thì bắt đầu lại từ trống
                 _LOGGER.exception("Layout lưu trữ không hợp lệ, dùng layout trống")
         self._resubscribe()
+        self._restart_weather()
 
     async def async_set_layout(self, raw: dict[str, Any]) -> None:
         self.layout = validate_layout(raw)
         self.rev += 1
         await self._store.async_save({"layout": self.layout, "rev": self.rev})
         self._resubscribe()
+        self._restart_weather()
         await self.async_push_layout()
 
     # ---- thông điệp xuống màn hình -------------------------------------------------
@@ -104,6 +109,8 @@ class ScreenHub:
             msg.update(light_util.state_fields(st.state, st.attributes, entity_id in self._effects))
         elif entity_id.split(".", 1)[0] == MEDIA_DOMAIN:
             msg.update(media_util.state_fields(st.state, st.attributes))
+        elif entity_id.split(".", 1)[0] == WEATHER_DOMAIN:
+            msg.update(weather_util.state_fields(st.state, st.attributes, self._forecasts.get(entity_id)))
         return msg
 
     async def async_push_layout(self) -> None:
@@ -112,6 +119,36 @@ class ScreenHub:
         for eid in entity_ids(self.layout):
             if (m := self.state_message(eid)):
                 await self._broadcast(m)
+
+    # ---- dự báo thời tiết: lấy định kỳ rồi đẩy lại trạng thái xuống màn hình ----------------
+    async def _refresh_weather(self) -> None:
+        for eid in entity_ids(self.layout):
+            if eid.split(".", 1)[0] != WEATHER_DOMAIN:
+                continue
+            st = self.hass.states.get(eid)
+            if st is None:
+                continue
+            self._forecasts[eid] = await weather_util.async_fetch(self.hass, eid, st.attributes)
+            if (m := self.state_message(eid)):
+                await self._broadcast(m)
+
+    async def _weather_loop(self) -> None:
+        try:
+            while True:
+                try:
+                    await self._refresh_weather()
+                except Exception:  # noqa: BLE001
+                    _LOGGER.exception("Lỗi cập nhật dự báo thời tiết")
+                await asyncio.sleep(WEATHER_REFRESH_S)
+        except asyncio.CancelledError:
+            raise
+
+    def _restart_weather(self) -> None:
+        if self._wx_task:
+            self._wx_task.cancel()
+            self._wx_task = None
+        if any(e.split(".", 1)[0] == WEATHER_DOMAIN for e in entity_ids(self.layout)):
+            self._wx_task = self.hass.async_create_background_task(self._weather_loop(), f"{DOMAIN}_weather")
 
     async def _broadcast(self, msg: dict[str, Any]) -> None:
         for ws in list(self.clients):
@@ -246,6 +283,8 @@ class ScreenHub:
         return bool(self.clients)
 
     async def async_shutdown(self) -> None:
+        if self._wx_task:
+            self._wx_task.cancel()
         for eid in list(self._effects):
             self._stop_effect(eid, notify=False)
         if self._unsub:
