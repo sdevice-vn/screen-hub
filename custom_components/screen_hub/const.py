@@ -28,9 +28,12 @@ SENSOR_DOMAINS = {"sensor", "binary_sensor"}
 WEATHER_DOMAIN = "weather"           # thẻ thời tiết: thu nhỏ (chạm để mở) hoặc toàn màn hình
 WEATHER_STYLES = ("compact", "full")
 WEATHER_REFRESH_S = 20 * 60         # chu kỳ lấy lại dự báo
+SOLAR_DOMAIN = "solar"                # thiết bị ảo "Inverter": gom nhiều cảm biến thành một thẻ năng lượng mặt trời
+SOLAR_STYLES = ("compact", "full")
+SOLAR_DEBOUNCE_S = 1.0               # gom các lần cảm biến đổi liên tiếp thành một bản tin
 CLIMATE_DOMAIN = "climate"
 MEDIA_DOMAIN = "media_player"        # loa / trình phát nhạc: thẻ màu tím, chạm để mở giao diện điều khiển
-SUPPORTED_DOMAINS = TOGGLE_DOMAINS | ACTION_DOMAINS | SENSOR_DOMAINS | {WEATHER_DOMAIN, COVER_DOMAIN, CLIMATE_DOMAIN, MEDIA_DOMAIN}
+SUPPORTED_DOMAINS = TOGGLE_DOMAINS | ACTION_DOMAINS | SENSOR_DOMAINS | {WEATHER_DOMAIN, COVER_DOMAIN, CLIMATE_DOMAIN, MEDIA_DOMAIN, SOLAR_DOMAIN}
 
 # Icon mặc định theo domain khi người dùng chưa chọn
 DEFAULT_ICON = {
@@ -39,7 +42,7 @@ DEFAULT_ICON = {
     "script": "mdi:play", "button": "mdi:gesture-tap-button",
     "sensor": "mdi:thermometer", "binary_sensor": "mdi:eye",
     "climate": "mdi:thermostat", "media_player": "mdi:speaker", "input_boolean": "mdi:toggle-switch",
-    "automation": "mdi:cog", "weather": "mdi:weather-cloudy",
+    "automation": "mdi:cog", "weather": "mdi:weather-cloudy", "solar": "mdi:solar-power",
 }
 
 # Kiểu hiển thị của entity cover trên màn hình

@@ -8,8 +8,10 @@ from typing import Any
 import voluptuous as vol
 from homeassistant.core import HomeAssistant
 
+from .solar import ROLES as SOLAR_ROLES
+
 from .const import (ACTION_DOMAINS, CARD_WIDTHS, CLIMATE_DOMAIN, COVER_DOMAIN, COVER_STYLES, CURTAIN_CLASSES, DEFAULT_ICON, ICONS_KEY, MAX_DEVICES_PER_ROOM, MAX_DEVICES_TOTAL,
-                    MEDIA_DOMAIN, WEATHER_DOMAIN, WEATHER_STYLES,
+                    MEDIA_DOMAIN, SOLAR_DOMAIN, SOLAR_STYLES, WEATHER_DOMAIN, WEATHER_STYLES,
                     MAX_FLOORS, MAX_NAME_LEN, MAX_ROOMS_PER_FLOOR, SUPPORTED_DOMAINS,
                     TOGGLE_DOMAINS)
 
@@ -46,12 +48,31 @@ def _entity_id(v: Any) -> str:
     return s
 
 
+def _solar_sensors(v: Any) -> dict[str, str]:
+    """Bảng role -> entity_id cảm biến của Inverter; bỏ qua ô để trống."""
+    if not isinstance(v, dict):
+        raise vol.Invalid("sensors phải là bảng role -> entity_id")
+    out: dict[str, str] = {}
+    for role, eid in v.items():
+        if role not in SOLAR_ROLES:
+            raise vol.Invalid(f"role không hợp lệ: {role}")
+        eid = str(eid or "").strip().lower()
+        if not eid:
+            continue
+        if "." not in eid or eid.split(".", 1)[0] not in ("sensor", "input_number", "number"):
+            raise vol.Invalid(f"cảm biến không hợp lệ: {eid}")
+        out[role] = eid
+    return out
+
+
 DEVICE_SCHEMA = vol.Schema({
     vol.Required("entity_id"): _entity_id,
     vol.Optional("name", default=""): vol.Any("", _name),   # rỗng = dùng friendly_name của HA
     vol.Optional("icon", default=""): str,
     vol.Optional("cover_style", default=""): vol.In(("",) + COVER_STYLES),   # chỉ dùng cho cover.*
     vol.Optional("weather_style", default="compact"): vol.In(WEATHER_STYLES),   # chỉ dùng cho weather.*
+    vol.Optional("solar_style", default="compact"): vol.In(SOLAR_STYLES),       # chỉ dùng cho solar.* (Inverter)
+    vol.Optional("sensors", default=dict): _solar_sensors,                      # chỉ dùng cho solar.*: role -> cảm biến
     vol.Optional("width", default=1): vol.In(CARD_WIDTHS),                  # độ rộng thẻ (chỉ dùng cho sensor)
 })
 ROOM_SCHEMA = vol.Schema({
@@ -87,6 +108,8 @@ def tile_type(entity_id: str) -> str:
         return "media"
     if domain == WEATHER_DOMAIN:
         return "weather"
+    if domain == SOLAR_DOMAIN:
+        return "solar"
     if domain in TOGGLE_DOMAINS:
         return "toggle"
     if domain in ACTION_DOMAINS:
@@ -101,6 +124,26 @@ def entity_ids(layout: dict[str, Any]) -> list[str]:
             for d in r["devices"]:
                 seen[d["entity_id"]] = None
     return list(seen)
+
+
+def watch_ids(layout: dict[str, Any]) -> list[str]:
+    """Các entity thật của HA cần theo dõi: thiết bị thường + cảm biến của từng Inverter (thiết bị ảo không có state)."""
+    seen: dict[str, None] = {}
+    for f in layout["floors"]:
+        for r in f["rooms"]:
+            for d in r["devices"]:
+                if d["entity_id"].split(".", 1)[0] == SOLAR_DOMAIN:
+                    for eid in (d.get("sensors") or {}).values():
+                        seen[eid] = None
+                else:
+                    seen[d["entity_id"]] = None
+    return list(seen)
+
+
+def solar_devices(layout: dict[str, Any]) -> dict[str, dict[str, str]]:
+    """entity_id ảo của Inverter -> bảng cảm biến."""
+    return {d["entity_id"]: d.get("sensors") or {} for f in layout["floors"] for r in f["rooms"]
+            for d in r["devices"] if d["entity_id"].split(".", 1)[0] == SOLAR_DOMAIN}
 
 
 def default_cover_style(device_class: str) -> str:
@@ -130,6 +173,8 @@ def build_device_layout(layout: dict[str, Any], icons: list[dict[str, Any]],
                     dev["w"] = int(round(float(d["width"]) * 2))    # đơn vị nửa cột: 3 = ×1.5, 4 = ×2
                 if dev["t"] == "weather" and d.get("weather_style") == "full":
                     dev["ws"] = "full"                          # mặc định (thu nhỏ) thì không gửi
+                if dev["t"] == "solar" and d.get("solar_style") == "full":
+                    dev["ws"] = "full"
                 if dev["t"] == "cover":
                     dev["cs"] = d.get("cover_style") or default_cover_style((device_classes or {}).get(eid, ""))
                 devs.append(dev)

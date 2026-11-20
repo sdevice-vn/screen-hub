@@ -8,16 +8,17 @@ from typing import Any
 from aiohttp import web
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Event, HomeAssistant, callback
-from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.event import async_call_later, async_track_state_change_event
 from homeassistant.helpers.storage import Store
 
 from . import light as light_util
 from . import media as media_util
+from . import solar as solar_util
 from . import weather as weather_util
 from .const import (CLIMATE_DOMAIN, COVER_DOMAIN, COVER_FEATURE_SET_POSITION, DOMAIN, LIGHT_DOMAIN,
                     LIGHT_EFFECT, LIGHT_EFFECT_INTERVAL, LIGHT_EFFECT_MAX, LIGHT_EFFECT_MIN, LIGHT_EFFECT_STEP,
-                    MEDIA_DOMAIN, STORAGE_VERSION, WEATHER_DOMAIN, WEATHER_REFRESH_S)
-from .layout import async_get_icons, build_device_messages, entity_ids, validate_layout
+                    MEDIA_DOMAIN, SOLAR_DEBOUNCE_S, SOLAR_DOMAIN, STORAGE_VERSION, WEATHER_DOMAIN, WEATHER_REFRESH_S)
+from .layout import async_get_icons, build_device_messages, entity_ids, solar_devices, validate_layout, watch_ids
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,6 +37,9 @@ class ScreenHub:
         self._icons: list[dict[str, Any]] = []            # nạp trong async_load (không đọc file ở __init__)
         self._forecasts: dict[str, dict[str, list]] = {}  # entity_id -> {"hourly": [...], "daily": [...]}
         self._wx_task: asyncio.Task | None = None
+        self._solar: dict[str, dict[str, str]] = {}      # entity_id ảo của Inverter -> bảng cảm biến
+        self._dev_ids: set[str] = set()
+        self._solar_pending: dict[str, Any] = {}         # entity_id ảo -> bộ hẹn giờ gom bản tin đang chờ
         self._effects: dict[str, asyncio.Task] = {}      # entity_id -> tác vụ hiệu ứng tăng giảm độ sáng đang chạy
 
     async def async_load(self) -> None:
@@ -80,6 +84,11 @@ class ScreenHub:
                                      self._device_classes())
 
     def state_message(self, entity_id: str) -> dict[str, Any] | None:
+        if entity_id.split(".", 1)[0] == SOLAR_DOMAIN:             # thiết bị ảo: không có state trong HA, gom từ các cảm biến
+            if entity_id not in self._solar:
+                return None
+            return {"type": "state", "e": entity_id, "u": "", "dc": "",
+                    **solar_util.state_fields(self.hass, self._solar[entity_id])}
         st = self.hass.states.get(entity_id)
         if st is None:
             return None
@@ -162,7 +171,12 @@ class ScreenHub:
         if self._unsub:
             self._unsub()
             self._unsub = None
-        ids = entity_ids(self.layout)
+        self._solar = solar_devices(self.layout)
+        self._dev_ids = set(entity_ids(self.layout))
+        for t in self._solar_pending.values():
+            t()
+        self._solar_pending.clear()
+        ids = watch_ids(self.layout)
         for eid in list(self._effects):
             if eid not in ids:
                 self._stop_effect(eid)
@@ -175,8 +189,19 @@ class ScreenHub:
         new = event.data.get("new_state")
         if eid in self._effects and (new is None or new.state != "on"):
             self._stop_effect(eid)                     # đèn tắt / mất kết nối -> dừng hiệu ứng
-        if (m := self.state_message(eid)):
+        if eid in self._dev_ids and (m := self.state_message(eid)):
             self.hass.async_create_task(self._broadcast(m))
+        for vid, sensors in self._solar.items():                  # cảm biến thuộc Inverter đổi -> gom rồi gửi bản tin tổng hợp
+            if eid in sensors.values() and vid not in self._solar_pending:
+                self._solar_pending[vid] = async_call_later(self.hass, SOLAR_DEBOUNCE_S, self._solar_cb(vid))
+
+    def _solar_cb(self, vid: str):
+        @callback
+        def _fire(_now: Any) -> None:
+            self._solar_pending.pop(vid, None)
+            if (m := self.state_message(vid)):
+                self.hass.async_create_task(self._broadcast(m))
+        return _fire
 
     # ---- hiệu ứng tăng giảm độ sáng tự động ----------------------------------------------
     def _stop_effect(self, entity_id: str, notify: bool = True) -> bool:
@@ -289,5 +314,8 @@ class ScreenHub:
             self._stop_effect(eid, notify=False)
         if self._unsub:
             self._unsub()
+        for t in self._solar_pending.values():
+            t()
+        self._solar_pending.clear()
         for ws in list(self.clients):
             await ws.close()

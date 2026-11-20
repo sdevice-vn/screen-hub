@@ -4,6 +4,20 @@ const SUPPORTED = ["switch","light","fan","input_boolean","automation","lock","c
 const COVER_STYLES = [["roller", "Cửa cuốn"], ["curtain_both", "Rèm 2 bên"],
                       ["curtain_left", "Rèm 1 bên (đặt bên trái)"], ["curtain_right", "Rèm 1 bên (đặt bên phải)"]];
 const SENSOR_DOMAINS = ["sensor", "binary_sensor"];
+const SOLAR_STYLES = [["compact", "Thu nhỏ"], ["full", "Toàn màn hình"]];
+/* Cảm biến của Inverter: [role, nhãn, đơn vị gợi ý]. Role phải khớp ROLES trong solar.py. Công suất W/kW, sản lượng Wh/kWh... được tự đổi đơn vị. */
+const SOLAR_GROUPS = [
+  ["Dàn pin PV1", [["pv1_voltage", "Điện áp PV1", "V"], ["pv1_current", "Dòng điện PV1", "A"], ["pv1_power", "Công suất PV1", "W"]]],
+  ["Dàn pin PV2 (nếu có)", [["pv2_voltage", "Điện áp PV2", "V"], ["pv2_current", "Dòng điện PV2", "A"], ["pv2_power", "Công suất PV2", "W"]]],
+  ["Dàn pin PV3 (nếu có)", [["pv3_voltage", "Điện áp PV3", "V"], ["pv3_current", "Dòng điện PV3", "A"], ["pv3_power", "Công suất PV3", "W"]]],
+  ["Pin lưu trữ", [["battery_voltage", "Điện áp pin", "V"], ["battery_soc", "Phần trăm pin", "%"],
+                   ["battery_charge_power", "Công suất sạc", "W"], ["battery_discharge_power", "Công suất xả", "W"]]],
+  ["Lưới điện", [["grid_voltage", "Điện áp lưới", "V"], ["grid_import_power", "Công suất lấy lưới", "W"], ["grid_export_power", "Công suất đẩy lưới", "W"]]],
+  ["Tải & cổng Backup", [["load_power", "Công suất tải", "W"], ["ongrid_power", "Công suất hòa lưới", "W"],
+                         ["backup_power", "Công suất cổng backup", "W"], ["backup_voltage", "Điện áp cổng backup", "V"]]],
+  ["Khác", [["inverter_temp", "Nhiệt độ inverter", "°C"], ["yield_today", "Sản lượng PV hôm nay", "kWh"]]],
+];
+const SOLAR_TOTAL = SOLAR_GROUPS.reduce((n, g) => n + g[1].length, 0);
 const WEATHER_STYLES = [["compact", "Thu nhỏ"], ["full", "Toàn màn hình"]];
 const CARD_WIDTHS = [[1, "Thẻ ×1"], [1.5, "Thẻ ×1.5"], [2, "Thẻ ×2"]];
 const CURTAIN_CLASSES = ["curtain", "blind", "shade", "awning"];
@@ -20,7 +34,7 @@ class ScreenHubPanel extends HTMLElement {
   async _boot() {
     this.attachShadow({ mode: "open" });
     this.s = { entries: [], entry: null, layout: { floors: [] }, floor: 0, icons: [], dirty: false,
-               picker: null, msg: "" };
+               picker: null, solarCfg: null, msg: "" };
     this.s.icons = await this._hass.callWS({ type: "screen_hub/icons" });
     this.s.entries = await this._hass.callWS({ type: "screen_hub/list" });
     if (this.s.entries.length) await this._load(this.s.entries[0].entry_id);
@@ -126,7 +140,16 @@ class ScreenHubPanel extends HTMLElement {
       .empty.big{margin:14px 0;padding:32px 16px;text-align:center;border:1px dashed var(--line);border-radius:16px}
       .addWrap{padding:10px 12px 12px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--secondary-background-color) 40%,transparent)}
       .addRow{display:flex;gap:8px}
-      .addEntity{flex:1 1 120px}
+      .addEntity{flex:0 1 260px;min-width:0}
+      .addRow button{flex:0 0 auto}
+      .sol{display:flex;align-items:center;gap:8px;flex:1 1 150px;max-width:260px}
+      .sol .cfg{height:34px;padding:0 12px;border-radius:10px}
+      .sol .cnt2{font-size:12px;color:var(--secondary-text-color);white-space:nowrap}
+      .srow{display:grid;grid-template-columns:minmax(120px,170px) 1fr;gap:8px;align-items:center;padding:4px 0}
+      .srow label{font-size:13px}
+      .srow label small{display:block;opacity:.55;font-size:11px}
+      .srow input{width:100%}
+      .shint{margin:10px 0 2px;font-size:12px;color:var(--secondary-text-color);line-height:1.5}
       .sugg{margin-top:8px;max-height:260px;overflow:auto;overscroll-behavior:contain;border:1px solid var(--line);
             border-radius:12px;background:var(--card-background-color);box-shadow:0 4px 14px #0000001f}
       .opt{display:flex;flex-direction:column;gap:2px;justify-content:center;min-height:46px;padding:8px 14px;cursor:pointer;border-top:1px solid var(--line)}
@@ -201,11 +224,15 @@ class ScreenHubPanel extends HTMLElement {
         ${r.devices.map((d, di) => `
           <div class="dev" data-dev="${di}">
             <button class="iconbtn pickIcon" title="Chọn icon">${this._iconCell(d.icon || "mdi:help-circle-outline")}</button>
-            <input class="devName" value="${esc(d.name)}" maxlength="24" title="${esc(d.entity_id)}" placeholder="${esc(this._stateName(d.entity_id))}">
+            <input class="devName" value="${esc(d.name)}" maxlength="24" title="${esc(d.entity_id)}" placeholder="${esc(d.entity_id.startsWith("solar.") ? "Hệ thống NLMT" : this._stateName(d.entity_id))}">
             ${d.entity_id.startsWith("cover.") ? `<select class="coverStyle" title="Kiểu hiển thị trên màn hình">${COVER_STYLES.map(([v, t]) =>
               `<option value="${v}" ${(d.cover_style || this._defaultCover(d.entity_id)) === v ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
             ${d.entity_id.startsWith("weather.") ? `<select class="weatherStyle" title="Kiểu hiển thị trên màn hình">${WEATHER_STYLES.map(([v, t]) =>
               `<option value="${v}" ${(d.weather_style || "compact") === v ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
+            ${d.entity_id.startsWith("solar.") ? `<select class="solarStyle" title="Kiểu hiển thị trên màn hình">${SOLAR_STYLES.map(([v, t]) =>
+              `<option value="${v}" ${(d.solar_style || "compact") === v ? "selected" : ""}>${t}</option>`).join("")}</select>
+              <span class="sol"><button class="cfg solarCfg" title="Chọn các cảm biến của Inverter">${ic("cog-outline")}<span>Cảm biến</span></button>
+              <span class="cnt2">${Object.values(d.sensors || {}).filter(Boolean).length}/${SOLAR_TOTAL}</span></span>` : ""}
             ${SENSOR_DOMAINS.includes(d.entity_id.split(".")[0]) ? `<select class="devWidth" title="Độ rộng thẻ trên màn hình">${CARD_WIDTHS.map(([v, t]) =>
               `<option value="${v}" ${(d.width || 1) === v ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
             <div class="acts">
@@ -218,19 +245,38 @@ class ScreenHubPanel extends HTMLElement {
           <div class="addRow">
             <input class="addEntity" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Gõ tên thiết bị để thêm…">
             <button class="addDev">${ic("plus")}<span>Thêm</span></button>
+            <button class="addSolar" title="Thêm thẻ giám sát hệ thống năng lượng mặt trời (Inverter)">${ic("plus")}<span>Inverter</span></button>
           </div>
           <div class="sugg" hidden></div>
         </div>
       </div>`).join("")}
     ${f.rooms.length ? "" : `<div class="empty big">Tầng này chưa có phòng. Nhấn nút + để thêm phòng.</div>`}` : (s.entries.length ? `<div class="empty big">Chưa có tầng nào. Nhấn "Thêm tầng" để bắt đầu.</div>` : "")}
     ${s.msg ? `<div class="toast ${/^(Lỗi|Chọn)/.test(s.msg) ? "err" : ""}">${esc(s.msg)}</div>` : ""}
-    ${s.picker ? this._pickerHtml() : ""}`;
+    ${s.picker ? this._pickerHtml() : ""}
+    ${s.solarCfg ? this._solarHtml() : ""}`;
     this.shadowRoot.innerHTML = html;
     clearTimeout(this._tm);
     if (s.msg) this._tm = setTimeout(() => { s.msg = ""; this.shadowRoot.querySelector(".toast")?.remove(); }, 3500);
     const menu = this.shadowRoot.querySelector("ha-menu-button");
     if (menu) { menu.hass = this._hass; menu.narrow = this._narrow; }    // mở thanh bên của HA trên điện thoại
     this._bind();
+  }
+
+  _solarHtml() {
+    const d = this.s.solarCfg, m = d.sensors || {};
+    const opts = Object.keys(this._hass.states).filter((e) => /^(sensor|input_number|number)\./.test(e))
+      .map((e) => `<option value="${esc(e)}">${esc(this._stateName(e))}</option>`).join("");
+    return `<div class="modal" id="solarModal"><div class="sheet">
+      <div class="shead"><b>Cảm biến Inverter</b><span style="flex:1"></span><button class="ib" id="closeSolar" title="Đóng">${ic("close")}</button></div>
+      <div class="sbody">
+        <datalist id="sensorList">${opts}</datalist>
+        <div class="shint">Chọn cảm biến HA cho từng thông số (gõ tên hoặc entity_id). Ô nào không có thì để trống. Đơn vị W/kW, Wh/kWh, mV/V… được tự quy đổi.
+          Hệ thống có tối đa 3 string PV; string nào không khai báo cảm biến sẽ không hiển thị.</div>
+        ${SOLAR_GROUPS.map(([title, rows]) => `<h3>${esc(title)}</h3>${rows.map(([role, label, unit]) => `
+          <div class="srow"><label>${esc(label)}<small>${esc(unit)}</small></label>
+            <input data-role="${role}" list="sensorList" value="${esc(m[role] || "")}" autocomplete="off" autocapitalize="off" spellcheck="false"
+              placeholder="sensor.…"></div>`).join("")}`).join("")}
+      </div></div></div>`;
   }
 
   _pickerHtml() {
@@ -301,11 +347,16 @@ class ScreenHubPanel extends HTMLElement {
       box.addEventListener("mousedown", (e) => e.preventDefault());     // giữ focus ở ô nhập khi chạm vào danh sách
       box.addEventListener("click", (e) => { const o = e.target.closest(".opt"); if (o) addEid(o.dataset.eid); });
       el.querySelector(".addDev").addEventListener("click", add);
+      el.querySelector(".addSolar").addEventListener("click", () => {        // thiết bị ảo: không có entity trong HA, cảm biến chọn ở thẻ riêng
+        const dev = { entity_id: "solar." + uid(), name: "Hệ thống NLMT", icon: "mdi:solar-power", solar_style: "compact", sensors: {} };
+        r.devices.push(dev); this.s.solarCfg = dev; this._touch(); });
       inp.addEventListener("keydown", (e) => e.key === "Enter" && add());
       el.querySelectorAll(".dev").forEach((de) => {
         const di = +de.dataset.dev, d = r.devices[di];
         de.querySelector(".devName").addEventListener("change", (e) => { d.name = e.target.value.trim(); this._touch(); });
         de.querySelector(".devWidth")?.addEventListener("change", (e) => { d.width = parseFloat(e.target.value); this._touch(); });
+        de.querySelector(".solarStyle")?.addEventListener("change", (e) => { d.solar_style = e.target.value; this._touch(); });
+        de.querySelector(".solarCfg")?.addEventListener("click", () => { this.s.solarCfg = d; this._render(); });
         de.querySelector(".weatherStyle")?.addEventListener("change", (e) => { d.weather_style = e.target.value; this._touch(); });
         de.querySelector(".coverStyle")?.addEventListener("change", (e) => { d.cover_style = e.target.value; this._touch(); });
         de.querySelector(".dUp").addEventListener("click", () => { move(r.devices, di, -1); this._touch(); });
@@ -315,6 +366,16 @@ class ScreenHubPanel extends HTMLElement {
       });
     });
 
+    const closeSolar = () => { this.s.solarCfg = null; this._render(); };
+    q("#closeSolar")?.addEventListener("click", closeSolar);
+    q("#solarModal")?.addEventListener("click", (e) => { if (e.target.id === "solarModal") closeSolar(); });
+    all("[data-role]").forEach((inp) => inp.addEventListener("change", () => {
+      const d = this.s.solarCfg; d.sensors ||= {};
+      const v = inp.value.trim().toLowerCase();
+      if (v) d.sensors[inp.dataset.role] = v; else delete d.sensors[inp.dataset.role];
+      this.s.dirty = true;
+      this.shadowRoot.querySelector("#save")?.removeAttribute("disabled");   // không dựng lại giao diện để khỏi mất tiêu điểm ô nhập
+    }));
     const closePick = () => { this.s.picker = null; this._render(); };
     q("#closePick")?.addEventListener("click", closePick);
     q("#modal")?.addEventListener("click", (e) => { if (e.target.id === "modal") closePick(); });
