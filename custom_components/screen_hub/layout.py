@@ -10,8 +10,8 @@ from homeassistant.core import HomeAssistant
 
 from .solar import ROLES as SOLAR_ROLES
 
-from .const import (ACTION_DOMAINS, CARD_WIDTHS, CLIMATE_DOMAIN, COVER_DOMAIN, COVER_STYLES, CURTAIN_CLASSES, DEFAULT_ICON, ICONS_KEY, MAX_DEVICES_PER_ROOM, MAX_DEVICES_TOTAL,
-                    MEDIA_DOMAIN, SOLAR_DOMAIN, SOLAR_STYLES, WEATHER_DOMAIN, WEATHER_STYLES,
+from .const import (ACTION_DOMAINS, CARD_WIDTHS, CLIMATE_DOMAIN, COVER_DOMAIN, COVER_STYLES, CURTAIN_CLASSES, DEFAULT_ICON, ENERGY_DOMAIN, ENERGY_STYLES,
+                    ICONS_KEY, MAX_DEVICES_PER_ROOM, MAX_DEVICES_TOTAL, FAN_DOMAIN, MEDIA_DOMAIN, SOLAR_DOMAIN, SOLAR_STYLES, WEATHER_DOMAIN, WEATHER_STYLES,
                     MAX_FLOORS, MAX_NAME_LEN, MAX_ROOMS_PER_FLOOR, SUPPORTED_DOMAINS,
                     TOGGLE_DOMAINS)
 
@@ -65,6 +65,14 @@ def _solar_sensors(v: Any) -> dict[str, str]:
     return out
 
 
+def _energy_sensor(v: Any) -> str:
+    """Cảm biến điện năng cộng dồn của Biểu đồ ĐNTT; rỗng = chưa chọn."""
+    s = str(v or "").strip().lower()
+    if s and (not s.startswith("sensor.") or len(s) <= 7):
+        raise vol.Invalid(f"cảm biến không hợp lệ: {s}")
+    return s
+
+
 DEVICE_SCHEMA = vol.Schema({
     vol.Required("entity_id"): _entity_id,
     vol.Optional("name", default=""): vol.Any("", _name),   # rỗng = dùng friendly_name của HA
@@ -72,6 +80,8 @@ DEVICE_SCHEMA = vol.Schema({
     vol.Optional("cover_style", default=""): vol.In(("",) + COVER_STYLES),   # chỉ dùng cho cover.*
     vol.Optional("weather_style", default="compact"): vol.In(WEATHER_STYLES),   # chỉ dùng cho weather.*
     vol.Optional("solar_style", default="compact"): vol.In(SOLAR_STYLES),       # chỉ dùng cho solar.* (Inverter)
+    vol.Optional("energy_style", default="compact"): vol.In(ENERGY_STYLES),     # chỉ dùng cho energy.* (Biểu đồ ĐNTT)
+    vol.Optional("energy_sensor", default=""): _energy_sensor,                  # chỉ dùng cho energy.*: cảm biến điện năng cộng dồn
     vol.Optional("sensors", default=dict): _solar_sensors,                      # chỉ dùng cho solar.*: role -> cảm biến
     vol.Optional("width", default=1): vol.In(CARD_WIDTHS),                  # độ rộng thẻ (chỉ dùng cho sensor)
 })
@@ -104,12 +114,16 @@ def tile_type(entity_id: str) -> str:
         return "cover"
     if domain == CLIMATE_DOMAIN:
         return "climate"
+    if domain == FAN_DOMAIN:
+        return "fan"
     if domain == MEDIA_DOMAIN:
         return "media"
     if domain == WEATHER_DOMAIN:
         return "weather"
     if domain == SOLAR_DOMAIN:
         return "solar"
+    if domain == ENERGY_DOMAIN:
+        return "energy"
     if domain in TOGGLE_DOMAINS:
         return "toggle"
     if domain in ACTION_DOMAINS:
@@ -135,6 +149,9 @@ def watch_ids(layout: dict[str, Any]) -> list[str]:
                 if d["entity_id"].split(".", 1)[0] == SOLAR_DOMAIN:
                     for eid in (d.get("sensors") or {}).values():
                         seen[eid] = None
+                elif d["entity_id"].split(".", 1)[0] == ENERGY_DOMAIN:
+                    if d.get("energy_sensor"):
+                        seen[d["energy_sensor"]] = None
                 else:
                     seen[d["entity_id"]] = None
     return list(seen)
@@ -144,6 +161,12 @@ def solar_devices(layout: dict[str, Any]) -> dict[str, dict[str, str]]:
     """entity_id ảo của Inverter -> bảng cảm biến."""
     return {d["entity_id"]: d.get("sensors") or {} for f in layout["floors"] for r in f["rooms"]
             for d in r["devices"] if d["entity_id"].split(".", 1)[0] == SOLAR_DOMAIN}
+
+
+def energy_devices(layout: dict[str, Any]) -> dict[str, str]:
+    """entity_id ảo của Biểu đồ ĐNTT -> cảm biến điện năng cộng dồn ("" nếu chưa chọn)."""
+    return {d["entity_id"]: d.get("energy_sensor") or "" for f in layout["floors"] for r in f["rooms"]
+            for d in r["devices"] if d["entity_id"].split(".", 1)[0] == ENERGY_DOMAIN}
 
 
 def default_cover_style(device_class: str) -> str:
@@ -174,6 +197,8 @@ def build_device_layout(layout: dict[str, Any], icons: list[dict[str, Any]],
                 if dev["t"] == "weather" and d.get("weather_style") == "full":
                     dev["ws"] = "full"                          # mặc định (thu nhỏ) thì không gửi
                 if dev["t"] == "solar" and d.get("solar_style") == "full":
+                    dev["ws"] = "full"
+                if dev["t"] == "energy" and d.get("energy_style") == "full":
                     dev["ws"] = "full"
                 if dev["t"] == "cover":
                     dev["cs"] = d.get("cover_style") or default_cover_style((device_classes or {}).get(eid, ""))

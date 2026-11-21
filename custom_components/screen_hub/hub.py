@@ -3,22 +3,28 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import timedelta
 from typing import Any
 
 from aiohttp import web
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Event, HomeAssistant, callback
-from homeassistant.helpers.event import async_call_later, async_track_state_change_event
+from homeassistant.helpers.event import async_call_later, async_track_state_change_event, async_track_time_change
 from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
 
+from . import energy as energy_util
+from . import fan as fan_util
 from . import light as light_util
 from . import media as media_util
 from . import solar as solar_util
 from . import weather as weather_util
 from .const import (CLIMATE_DOMAIN, COVER_DOMAIN, COVER_FEATURE_SET_POSITION, DOMAIN, LIGHT_DOMAIN,
                     LIGHT_EFFECT, LIGHT_EFFECT_INTERVAL, LIGHT_EFFECT_MAX, LIGHT_EFFECT_MIN, LIGHT_EFFECT_STEP,
+                    ENERGY_DEBOUNCE_S, ENERGY_DOMAIN, ENERGY_SAVE_DELAY_S, FAN_DOMAIN,
                     MEDIA_DOMAIN, SOLAR_DEBOUNCE_S, SOLAR_DOMAIN, STORAGE_VERSION, WEATHER_DOMAIN, WEATHER_REFRESH_S)
-from .layout import async_get_icons, build_device_messages, entity_ids, solar_devices, validate_layout, watch_ids
+from .layout import (async_get_icons, build_device_messages, energy_devices, entity_ids, solar_devices, validate_layout,
+                     watch_ids)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,6 +46,11 @@ class ScreenHub:
         self._solar: dict[str, dict[str, str]] = {}      # entity_id ảo của Inverter -> bảng cảm biến
         self._dev_ids: set[str] = set()
         self._solar_pending: dict[str, Any] = {}         # entity_id ảo -> bộ hẹn giờ gom bản tin đang chờ
+        self._energy_store: Store = Store(hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}.energy")
+        self._books: dict[str, energy_util.EnergyBook] = {}    # cảm biến cộng dồn -> sổ điện năng từng ngày (lưu bền)
+        self._energy: dict[str, str] = {}                      # entity_id ảo của Biểu đồ ĐNTT -> cảm biến
+        self._energy_pending: dict[str, Any] = {}              # entity_id ảo -> bộ hẹn giờ gom bản tin đang chờ
+        self._midnight = None                                  # huỷ theo dõi mốc 0h
         self._effects: dict[str, asyncio.Task] = {}      # entity_id -> tác vụ hiệu ứng tăng giảm độ sáng đang chạy
 
     async def async_load(self) -> None:
@@ -51,8 +62,11 @@ class ScreenHub:
                 self.rev = int(data.get("rev", 0))
             except Exception:  # noqa: BLE001 - layout hỏng thì bắt đầu lại từ trống
                 _LOGGER.exception("Layout lưu trữ không hợp lệ, dùng layout trống")
+        stored = await self._energy_store.async_load() or {}
+        self._books = {k: energy_util.EnergyBook(v) for k, v in (stored.get("books") or {}).items() if isinstance(v, dict)}
         self._resubscribe()
         self._restart_weather()
+        self._midnight = async_track_time_change(self.hass, self._on_midnight, hour=0, minute=0, second=0)
 
     async def async_set_layout(self, raw: dict[str, Any]) -> None:
         self.layout = validate_layout(raw)
@@ -89,6 +103,11 @@ class ScreenHub:
                 return None
             return {"type": "state", "e": entity_id, "u": "", "dc": "",
                     **solar_util.state_fields(self.hass, self._solar[entity_id])}
+        if entity_id.split(".", 1)[0] == ENERGY_DOMAIN:            # thiết bị ảo: số liệu từng ngày lấy từ sổ điện năng đã lưu
+            if entity_id not in self._energy:
+                return None
+            return {"type": "state", "e": entity_id, "u": "kWh", "dc": "",
+                    **energy_util.state_fields(self._books.get(self._energy[entity_id]), dt_util.now().date())}
         st = self.hass.states.get(entity_id)
         if st is None:
             return None
@@ -116,6 +135,8 @@ class ScreenHub:
             msg["ha"] = a.get("hvac_action")
         elif entity_id.split(".", 1)[0] == LIGHT_DOMAIN:
             msg.update(light_util.state_fields(st.state, st.attributes, entity_id in self._effects))
+        elif entity_id.split(".", 1)[0] == FAN_DOMAIN:
+            msg.update(fan_util.state_fields(st.attributes))
         elif entity_id.split(".", 1)[0] == MEDIA_DOMAIN:
             msg.update(media_util.state_fields(st.state, st.attributes))
         elif entity_id.split(".", 1)[0] == WEATHER_DOMAIN:
@@ -172,6 +193,14 @@ class ScreenHub:
             self._unsub()
             self._unsub = None
         self._solar = solar_devices(self.layout)
+        self._energy = energy_devices(self.layout)
+        for t in self._energy_pending.values():
+            t()
+        self._energy_pending.clear()
+        for sensor in self._energy.values():
+            if sensor:
+                self._books.setdefault(sensor, energy_util.EnergyBook())
+                self._energy_feed(sensor)                 # ghi mốc ban đầu / phần tăng thêm kể từ lần đọc trước
         self._dev_ids = set(entity_ids(self.layout))
         for t in self._solar_pending.values():
             t()
@@ -191,9 +220,50 @@ class ScreenHub:
             self._stop_effect(eid)                     # đèn tắt / mất kết nối -> dừng hiệu ứng
         if eid in self._dev_ids and (m := self.state_message(eid)):
             self.hass.async_create_task(self._broadcast(m))
+        if eid in self._energy.values() and self._energy_feed(eid):
+            for vid, sensor in self._energy.items():              # số liệu ngày đổi -> gom rồi gửi lại biểu đồ
+                if sensor == eid and vid not in self._energy_pending:
+                    self._energy_pending[vid] = async_call_later(self.hass, ENERGY_DEBOUNCE_S, self._energy_cb(vid))
         for vid, sensors in self._solar.items():                  # cảm biến thuộc Inverter đổi -> gom rồi gửi bản tin tổng hợp
             if eid in sensors.values() and vid not in self._solar_pending:
                 self._solar_pending[vid] = async_call_later(self.hass, SOLAR_DEBOUNCE_S, self._solar_cb(vid))
+
+    # ---- điện năng tiêu thụ theo ngày --------------------------------------------------------------
+    def _energy_feed(self, sensor: str, day=None) -> bool:
+        """Đọc cảm biến cộng dồn và ghi phần tăng thêm vào ngày `day` (mặc định hôm nay). True nếu số liệu đổi."""
+        book = self._books.get(sensor)
+        if book is None:
+            return False
+        today = dt_util.now().date()
+        changed = book.feed(solar_util.read(self.hass, sensor, "energy"), day or today)
+        book.ensure_day(today)
+        if changed:
+            book.prune(today)
+            self._energy_save()
+        return changed
+
+    def _energy_save(self) -> None:
+        self._energy_store.async_delay_save(
+            lambda: {"books": {k: b.to_dict() for k, b in self._books.items()}}, ENERGY_SAVE_DELAY_S)
+
+    def _energy_cb(self, vid: str):
+        @callback
+        def _fire(_now: Any) -> None:
+            self._energy_pending.pop(vid, None)
+            if (m := self.state_message(vid)):
+                self.hass.async_create_task(self._broadcast(m))
+        return _fire
+
+    @callback
+    def _on_midnight(self, _now: Any) -> None:
+        """0h: phần điện đã dùng tới giờ tính cho ngày hôm qua, rồi mở ngày mới và đẩy lại biểu đồ."""
+        yesterday = dt_util.now().date() - timedelta(days=1)
+        for sensor in {s for s in self._energy.values() if s}:
+            self._energy_feed(sensor, yesterday)
+        self._energy_save()
+        for vid in self._energy:
+            if (m := self.state_message(vid)):
+                self.hass.async_create_task(self._broadcast(m))
 
     def _solar_cb(self, vid: str):
         @callback
@@ -282,6 +352,12 @@ class ScreenHub:
             if extra is not None:
                 data.update(extra)
                 service = ("light", "turn_on")
+        elif domain == FAN_DOMAIN and action in ("power", "speed", "oscillate", "direction", "preset"):
+            st = self.hass.states.get(entity_id)
+            svc = fan_util.service_for(st.attributes if st else {}, action, value, text)
+            if svc is not None:
+                service = ("fan", svc[0])
+                data.update(svc[1])
         elif domain == MEDIA_DOMAIN:
             st = self.hass.states.get(entity_id)
             if st is not None:
@@ -314,8 +390,15 @@ class ScreenHub:
             self._stop_effect(eid, notify=False)
         if self._unsub:
             self._unsub()
+        if self._midnight:
+            self._midnight()
+            self._midnight = None
         for t in self._solar_pending.values():
             t()
         self._solar_pending.clear()
+        for t in self._energy_pending.values():
+            t()
+        self._energy_pending.clear()
+        await self._energy_store.async_save({"books": {k: b.to_dict() for k, b in self._books.items()}})   # ghi nốt số liệu đang chờ
         for ws in list(self.clients):
             await ws.close()

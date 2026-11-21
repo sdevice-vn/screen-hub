@@ -17,6 +17,8 @@ const SOLAR_GROUPS = [
                          ["backup_power", "Công suất cổng backup", "W"], ["backup_voltage", "Điện áp cổng backup", "V"]]],
   ["Khác", [["inverter_temp", "Nhiệt độ inverter", "°C"], ["yield_today", "Sản lượng PV hôm nay", "kWh"]]],
 ];
+const ENERGY_STYLES = [["compact", "Thu nhỏ"], ["full", "Toàn màn hình"]];
+const ENERGY_UNITS = ["Wh", "kWh", "MWh", "GWh"];
 const SOLAR_TOTAL = SOLAR_GROUPS.reduce((n, g) => n + g[1].length, 0);
 const WEATHER_STYLES = [["compact", "Thu nhỏ"], ["full", "Toàn màn hình"]];
 const CARD_WIDTHS = [[1, "Thẻ ×1"], [1.5, "Thẻ ×1.5"], [2, "Thẻ ×2"]];
@@ -34,7 +36,7 @@ class ScreenHubPanel extends HTMLElement {
   async _boot() {
     this.attachShadow({ mode: "open" });
     this.s = { entries: [], entry: null, layout: { floors: [] }, floor: 0, icons: [], dirty: false,
-               picker: null, solarCfg: null, msg: "" };
+               picker: null, solarCfg: null, energyCfg: null, energyAll: false, msg: "" };
     this.s.icons = await this._hass.callWS({ type: "screen_hub/icons" });
     this.s.entries = await this._hass.callWS({ type: "screen_hub/list" });
     if (this.s.entries.length) await this._load(this.s.entries[0].entry_id);
@@ -139,7 +141,7 @@ class ScreenHubPanel extends HTMLElement {
       .empty{padding:14px 16px;border-top:1px solid var(--line);font-size:13px;color:var(--secondary-text-color)}
       .empty.big{margin:14px 0;padding:32px 16px;text-align:center;border:1px dashed var(--line);border-radius:16px}
       .addWrap{padding:10px 12px 12px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--secondary-background-color) 40%,transparent)}
-      .addRow{display:flex;gap:8px}
+      .addRow{display:flex;gap:8px;flex-wrap:wrap}
       .addEntity{flex:0 1 260px;min-width:0}
       .addRow button{flex:0 0 auto}
       .sol{display:flex;align-items:center;gap:8px;flex:1 1 150px;max-width:260px}
@@ -179,6 +181,8 @@ class ScreenHubPanel extends HTMLElement {
         .top{margin:0 -10px;padding:6px 10px}
         input,select{font-size:16px}            /* tránh trình duyệt di động tự phóng to khi chạm vào ô nhập */
         .bar select{max-width:none}
+        .addEntity{flex:1 1 100%}                 /* ô nhập một hàng riêng, các nút Thêm / Inverter / Biểu đồ ĐNTT xuống hàng dưới */
+        .addRow button{flex:1 1 auto}
         .lbl{display:none}
         .del{width:var(--ctl);padding:0}
         .dev select{order:3;flex:1 1 100%;max-width:none}   /* ô chọn kiểu/độ rộng xuống dòng riêng, nút ▲▼✕ giữ ở hàng đầu */
@@ -224,7 +228,7 @@ class ScreenHubPanel extends HTMLElement {
         ${r.devices.map((d, di) => `
           <div class="dev" data-dev="${di}">
             <button class="iconbtn pickIcon" title="Chọn icon">${this._iconCell(d.icon || "mdi:help-circle-outline")}</button>
-            <input class="devName" value="${esc(d.name)}" maxlength="24" title="${esc(d.entity_id)}" placeholder="${esc(d.entity_id.startsWith("solar.") ? "Hệ thống NLMT" : this._stateName(d.entity_id))}">
+            <input class="devName" value="${esc(d.name)}" maxlength="24" title="${esc(d.entity_id)}" placeholder="${esc(d.entity_id.startsWith("solar.") ? "Hệ thống NLMT" : d.entity_id.startsWith("energy.") ? "Biểu đồ ĐNTT" : this._stateName(d.entity_id))}">
             ${d.entity_id.startsWith("cover.") ? `<select class="coverStyle" title="Kiểu hiển thị trên màn hình">${COVER_STYLES.map(([v, t]) =>
               `<option value="${v}" ${(d.cover_style || this._defaultCover(d.entity_id)) === v ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
             ${d.entity_id.startsWith("weather.") ? `<select class="weatherStyle" title="Kiểu hiển thị trên màn hình">${WEATHER_STYLES.map(([v, t]) =>
@@ -233,6 +237,10 @@ class ScreenHubPanel extends HTMLElement {
               `<option value="${v}" ${(d.solar_style || "compact") === v ? "selected" : ""}>${t}</option>`).join("")}</select>
               <span class="sol"><button class="cfg solarCfg" title="Chọn các cảm biến của Inverter">${ic("cog-outline")}<span>Cảm biến</span></button>
               <span class="cnt2">${Object.values(d.sensors || {}).filter(Boolean).length}/${SOLAR_TOTAL}</span></span>` : ""}
+            ${d.entity_id.startsWith("energy.") ? `<select class="energyStyle" title="Kiểu hiển thị trên màn hình">${ENERGY_STYLES.map(([v, t]) =>
+              `<option value="${v}" ${(d.energy_style || "compact") === v ? "selected" : ""}>${t}</option>`).join("")}</select>
+              <span class="sol"><button class="cfg energyCfg" title="Chọn cảm biến điện năng cộng dồn">${ic("cog-outline")}<span>Cảm biến</span></button>
+              <span class="cnt2" title="${esc(d.energy_sensor || "")}">${d.energy_sensor ? "✔ " + esc(this._stateName(d.energy_sensor)) : "Chưa chọn"}</span></span>` : ""}
             ${SENSOR_DOMAINS.includes(d.entity_id.split(".")[0]) ? `<select class="devWidth" title="Độ rộng thẻ trên màn hình">${CARD_WIDTHS.map(([v, t]) =>
               `<option value="${v}" ${(d.width || 1) === v ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
             <div class="acts">
@@ -246,6 +254,7 @@ class ScreenHubPanel extends HTMLElement {
             <input class="addEntity" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Gõ tên thiết bị để thêm…">
             <button class="addDev">${ic("plus")}<span>Thêm</span></button>
             <button class="addSolar" title="Thêm thẻ giám sát hệ thống năng lượng mặt trời (Inverter)">${ic("plus")}<span>Inverter</span></button>
+            <button class="addEnergy" title="Thêm biểu đồ điện năng tiêu thụ từng ngày trong tháng">${ic("plus")}<span>Biểu đồ ĐNTT</span></button>
           </div>
           <div class="sugg" hidden></div>
         </div>
@@ -253,7 +262,8 @@ class ScreenHubPanel extends HTMLElement {
     ${f.rooms.length ? "" : `<div class="empty big">Tầng này chưa có phòng. Nhấn nút + để thêm phòng.</div>`}` : (s.entries.length ? `<div class="empty big">Chưa có tầng nào. Nhấn "Thêm tầng" để bắt đầu.</div>` : "")}
     ${s.msg ? `<div class="toast ${/^(Lỗi|Chọn)/.test(s.msg) ? "err" : ""}">${esc(s.msg)}</div>` : ""}
     ${s.picker ? this._pickerHtml() : ""}
-    ${s.solarCfg ? this._solarHtml() : ""}`;
+    ${s.solarCfg ? this._solarHtml() : ""}
+    ${s.energyCfg ? this._energyHtml() : ""}`;
     this.shadowRoot.innerHTML = html;
     clearTimeout(this._tm);
     if (s.msg) this._tm = setTimeout(() => { s.msg = ""; this.shadowRoot.querySelector(".toast")?.remove(); }, 3500);
@@ -276,6 +286,43 @@ class ScreenHubPanel extends HTMLElement {
           <div class="srow"><label>${esc(label)}<small>${esc(unit)}</small></label>
             <input data-role="${role}" list="sensorList" value="${esc(m[role] || "")}" autocomplete="off" autocapitalize="off" spellcheck="false"
               placeholder="sensor.…"></div>`).join("")}`).join("")}
+      </div></div></div>`;
+  }
+
+  /* Cảm biến điện năng cộng dồn: ưu tiên device_class "energy" hoặc đơn vị Wh/kWh/MWh; có nút "Hiện tất cả cảm biến" */
+  _energyCandidates(q) {
+    const toks = fold(q || "").split(/\s+/).filter(Boolean), all = this.s.energyAll;
+    return Object.keys(this._hass.states).filter((e) => e.startsWith("sensor."))
+      .filter((e) => { const a = this._hass.states[e].attributes || {};
+        return all || a.device_class === "energy" || ENERGY_UNITS.includes(a.unit_of_measurement); })
+      .map((e) => { const name = this._stateName(e); return { eid: e, name, key: fold(name + " " + e) }; })
+      .filter((o) => toks.every((t) => o.key.includes(t)))
+      .sort((a, b) => a.name.localeCompare(b.name, "vi"));
+  }
+
+  _energySuggHtml(q) {
+    const list = this._energyCandidates(q);
+    return list.length ? list.slice(0, 40).map((o) => { const st = this._hass.states[o.eid];
+      return `<div class="opt" data-eid="${esc(o.eid)}"><span class="oname">${esc(o.name)}</span><span class="oeid">${esc(o.eid)} · ${esc(st.state)} ${esc(st.attributes.unit_of_measurement || "")}</span></div>`; }).join("")
+      : `<div class="none">Không có cảm biến phù hợp${this.s.energyAll ? "" : " (nhấn \"Hiện tất cả cảm biến\")"}</div>`;
+  }
+
+  _energyHtml() {
+    const d = this.s.energyCfg, cur = d.energy_sensor, st = cur && this._hass.states[cur];
+    return `<div class="modal" id="energyModal"><div class="sheet">
+      <div class="shead"><b>Cảm biến điện năng</b><span style="flex:1"></span><button class="ib" id="closeEnergy" title="Đóng">${ic("close")}</button></div>
+      <div class="sbody">
+        <div class="shint">Chọn <b>một</b> cảm biến điện năng <b>cộng dồn</b> (kWh, Wh, MWh…). Hệ thống tự tính mức tiêu thụ từng ngày bằng hiệu giữa các lần đọc rồi lưu lại,
+          nên biểu đồ chỉ có số liệu từ lúc chọn cảm biến. Đơn vị Wh/kWh/MWh được tự quy đổi; cảm biến bị reset về 0 cũng được xử lý.</div>
+        <h3>Đang chọn</h3>
+        <div class="srow" style="grid-template-columns:1fr auto">
+          <div>${cur ? `<b>${esc(this._stateName(cur))}</b><small style="display:block;opacity:.6">${esc(cur)}${st ? " · " + esc(st.state) + " " + esc(st.attributes.unit_of_measurement || "") : " · không tìm thấy trong HA"}</small>` : `<span style="opacity:.6">Chưa chọn cảm biến</span>`}</div>
+          ${cur ? `<button class="ib del" id="energyClear" title="Bỏ chọn">${ic("close")}</button>` : ""}
+        </div>
+        <h3>Tìm cảm biến</h3>
+        <div class="addRow"><input id="energyQ" style="flex:1 1 200px" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Gõ tên hoặc entity_id…">
+          <button id="energyAll">${this.s.energyAll ? "Chỉ cảm biến điện năng" : "Hiện tất cả cảm biến"}</button></div>
+        <div class="sugg" id="energySugg">${this._energySuggHtml("")}</div>
       </div></div></div>`;
   }
 
@@ -350,11 +397,16 @@ class ScreenHubPanel extends HTMLElement {
       el.querySelector(".addSolar").addEventListener("click", () => {        // thiết bị ảo: không có entity trong HA, cảm biến chọn ở thẻ riêng
         const dev = { entity_id: "solar." + uid(), name: "Hệ thống NLMT", icon: "mdi:solar-power", solar_style: "compact", sensors: {} };
         r.devices.push(dev); this.s.solarCfg = dev; this._touch(); });
+      el.querySelector(".addEnergy").addEventListener("click", () => {       // thiết bị ảo: cảm biến chọn ở thẻ riêng
+        const dev = { entity_id: "energy." + uid(), name: "Biểu đồ ĐNTT", icon: "mdi:meter-electric", energy_style: "compact", energy_sensor: "" };
+        r.devices.push(dev); this.s.energyAll = false; this.s.energyCfg = dev; this._touch(); });
       inp.addEventListener("keydown", (e) => e.key === "Enter" && add());
       el.querySelectorAll(".dev").forEach((de) => {
         const di = +de.dataset.dev, d = r.devices[di];
         de.querySelector(".devName").addEventListener("change", (e) => { d.name = e.target.value.trim(); this._touch(); });
         de.querySelector(".devWidth")?.addEventListener("change", (e) => { d.width = parseFloat(e.target.value); this._touch(); });
+        de.querySelector(".energyStyle")?.addEventListener("change", (e) => { d.energy_style = e.target.value; this._touch(); });
+        de.querySelector(".energyCfg")?.addEventListener("click", () => { this.s.energyAll = false; this.s.energyCfg = d; this._render(); });
         de.querySelector(".solarStyle")?.addEventListener("change", (e) => { d.solar_style = e.target.value; this._touch(); });
         de.querySelector(".solarCfg")?.addEventListener("click", () => { this.s.solarCfg = d; this._render(); });
         de.querySelector(".weatherStyle")?.addEventListener("change", (e) => { d.weather_style = e.target.value; this._touch(); });
@@ -376,6 +428,17 @@ class ScreenHubPanel extends HTMLElement {
       this.s.dirty = true;
       this.shadowRoot.querySelector("#save")?.removeAttribute("disabled");   // không dựng lại giao diện để khỏi mất tiêu điểm ô nhập
     }));
+    const closeEnergy = () => { this.s.energyCfg = null; this._render(); };
+    q("#closeEnergy")?.addEventListener("click", closeEnergy);
+    q("#energyModal")?.addEventListener("click", (e) => { if (e.target.id === "energyModal") closeEnergy(); });
+    q("#energyClear")?.addEventListener("click", () => { this.s.energyCfg.energy_sensor = ""; this._touch(); });
+    const eq = q("#energyQ"), esg = q("#energySugg");
+    if (eq) {
+      eq.addEventListener("input", () => { esg.innerHTML = this._energySuggHtml(eq.value); });
+      q("#energyAll").addEventListener("click", () => { this.s.energyAll = !this.s.energyAll; this._render(); });
+      esg.addEventListener("click", (e) => { const o = e.target.closest(".opt"); if (!o) return;
+        this.s.energyCfg.energy_sensor = o.dataset.eid; this.s.energyCfg = null; this._touch(); });
+    }
     const closePick = () => { this.s.picker = null; this._render(); };
     q("#closePick")?.addEventListener("click", closePick);
     q("#modal")?.addEventListener("click", (e) => { if (e.target.id === "modal") closePick(); });
