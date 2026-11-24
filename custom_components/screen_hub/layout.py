@@ -8,7 +8,7 @@ from typing import Any
 import voluptuous as vol
 from homeassistant.core import HomeAssistant
 
-from .solar import ROLES as SOLAR_ROLES
+from .solar import RETIRED_ROLES as SOLAR_RETIRED_ROLES, ROLES as SOLAR_ROLES
 
 from .const import (ACTION_DOMAINS, CARD_WIDTHS, CLIMATE_DOMAIN, COVER_DOMAIN, COVER_STYLES, CURTAIN_CLASSES, DEFAULT_ICON, ENERGY_DOMAIN, ENERGY_STYLES,
                     ICONS_KEY, MAX_DEVICES_PER_ROOM, MAX_DEVICES_TOTAL, FAN_DOMAIN, MEDIA_DOMAIN, SOLAR_DOMAIN, SOLAR_STYLES, WEATHER_DOMAIN, WEATHER_STYLES,
@@ -54,6 +54,8 @@ def _solar_sensors(v: Any) -> dict[str, str]:
         raise vol.Invalid("sensors phải là bảng role -> entity_id")
     out: dict[str, str] = {}
     for role, eid in v.items():
+        if role in SOLAR_RETIRED_ROLES:
+            continue
         if role not in SOLAR_ROLES:
             raise vol.Invalid(f"role không hợp lệ: {role}")
         eid = str(eid or "").strip().lower()

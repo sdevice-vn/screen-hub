@@ -15,11 +15,15 @@ ROLES: dict[str, tuple[str, str]] = {
     "battery_voltage": ("bv", "volt"), "battery_soc": ("bs", "percent"),
     "battery_charge_power": ("bc", "power"), "battery_discharge_power": ("bd", "power"),
     "grid_voltage": ("gv", "volt"), "grid_import_power": ("gi", "power"), "grid_export_power": ("ge", "power"),
-    "load_power": ("lp", "power"), "ongrid_power": ("og", "power"),
+    "load_power": ("lp", "power"),
+    # điện năng hôm nay (kWh): khoá bắt đầu bằng "t" (today), không trùng khoá công suất tức thời ở trên
+    "grid_import_today": ("tgi", "energy"), "grid_export_today": ("tge", "energy"),
+    "battery_charge_today": ("tbc", "energy"), "battery_discharge_today": ("tbd", "energy"), "load_today": ("tld", "energy"),
     "backup_power": ("kp", "power"), "backup_voltage": ("kv", "volt"),
     "inverter_temp": ("it", "temp"), "yield_today": ("yd", "energy"),
 }
 STYLES = ("compact", "full")
+RETIRED_ROLES = frozenset({"ongrid_power"})      # role đã bỏ (Công suất hòa lưới): layout cũ còn chứa thì bỏ qua, không báo lỗi
 _BAD = ("unknown", "unavailable", "none", "")
 
 
@@ -71,6 +75,8 @@ def state_fields(hass: Any, sensors: Mapping[str, str]) -> dict[str, Any]:
             out[key] = int(round(v))
         elif kind == "percent":
             out[key] = int(round(max(0, min(100, v))))
+        elif kind == "energy":
+            out[key] = round(v, 2)
         else:
             out[key] = round(v, 1)
     # số string PV có khai báo cảm biến (1..3); màn hình chỉ vẽ các string này
