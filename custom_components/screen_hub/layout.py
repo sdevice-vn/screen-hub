@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 
 from .solar import RETIRED_ROLES as SOLAR_RETIRED_ROLES, ROLES as SOLAR_ROLES
 
-from .const import (ACTION_DOMAINS, CARD_WIDTHS, CLIMATE_DOMAIN, COVER_DOMAIN, COVER_STYLES, CURTAIN_CLASSES, DEFAULT_ICON, ENERGY_DOMAIN, ENERGY_STYLES,
+from .const import (ACTION_DOMAINS, CARD_WIDTHS, CLIMATE_DOMAIN, CLIMATE_STYLES, COVER_DOMAIN, COVER_SIZES, COVER_STYLES, CURTAIN_CLASSES, DEFAULT_ICON, ENERGY_DOMAIN, ENERGY_STYLES,
                     ICONS_KEY, MAX_DEVICES_PER_ROOM, MAX_DEVICES_TOTAL, FAN_DOMAIN, MEDIA_DOMAIN, SOLAR_DOMAIN, SOLAR_STYLES, WEATHER_DOMAIN, WEATHER_STYLES,
                     MAX_FLOORS, MAX_NAME_LEN, MAX_ROOMS_PER_FLOOR, SUPPORTED_DOMAINS,
                     TOGGLE_DOMAINS)
@@ -80,6 +80,8 @@ DEVICE_SCHEMA = vol.Schema({
     vol.Optional("name", default=""): vol.Any("", _name),   # rỗng = dùng friendly_name của HA
     vol.Optional("icon", default=""): str,
     vol.Optional("cover_style", default=""): vol.In(("",) + COVER_STYLES),   # chỉ dùng cho cover.*
+    vol.Optional("cover_size", default="full"): vol.In(COVER_SIZES),          # chỉ dùng cho cover.*: thẻ thu nhỏ / toàn màn hình
+    vol.Optional("climate_style", default="full"): vol.In(CLIMATE_STYLES),    # chỉ dùng cho climate.*: thẻ thu nhỏ / toàn màn hình
     vol.Optional("weather_style", default="compact"): vol.In(WEATHER_STYLES),   # chỉ dùng cho weather.*
     vol.Optional("solar_style", default="compact"): vol.In(SOLAR_STYLES),       # chỉ dùng cho solar.* (Inverter)
     vol.Optional("energy_style", default="compact"): vol.In(ENERGY_STYLES),     # chỉ dùng cho energy.* (Biểu đồ ĐNTT)
@@ -204,6 +206,10 @@ def build_device_layout(layout: dict[str, Any], icons: list[dict[str, Any]],
                     dev["ws"] = "full"
                 if dev["t"] == "cover":
                     dev["cs"] = d.get("cover_style") or default_cover_style((device_classes or {}).get(eid, ""))
+                    if d.get("cover_size") == "compact":
+                        dev["ws"] = "compact"                   # mặc định (toàn màn hình) thì không gửi
+                if dev["t"] == "climate" and d.get("climate_style") == "compact":
+                    dev["ws"] = "compact"
                 devs.append(dev)
             rooms.append({"n": r["name"], "d": devs})
         out_floors.append({"n": f["name"], "r": rooms})

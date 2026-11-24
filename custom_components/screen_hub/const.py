@@ -38,6 +38,8 @@ ENERGY_SAVE_DELAY_S = 30             # trì hoãn ghi đĩa để không ghi m�
 ENERGY_KEEP_DAYS = 400               # giữ số liệu từng ngày tối đa ~13 tháng
 ENERGY_RESET_RATIO = 0.9             # cảm biến giảm xuống dưới 90% giá trị cũ = đã reset về 0 (đếm lại từ giá trị mới)
 CLIMATE_DOMAIN = "climate"
+CLIMATE_STYLES = ("compact", "full")   # máy lạnh: thẻ thu nhỏ (chạm để mở lớp phủ) hoặc toàn màn hình; layout cũ chưa khai báo = toàn màn hình
+COVER_SIZES = ("compact", "full")      # rèm / cửa cuốn: như trên (khác với cover_style là kiểu vẽ rèm / cửa cuốn)
 MEDIA_DOMAIN = "media_player"        # loa / trình phát nhạc: thẻ màu tím, chạm để mở giao diện điều khiển
 SUPPORTED_DOMAINS = TOGGLE_DOMAINS | ACTION_DOMAINS | SENSOR_DOMAINS | {WEATHER_DOMAIN, COVER_DOMAIN, CLIMATE_DOMAIN, MEDIA_DOMAIN, SOLAR_DOMAIN, ENERGY_DOMAIN}
 
