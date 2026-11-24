@@ -5,6 +5,7 @@ const COVER_STYLES = [["roller", "Cửa cuốn"], ["curtain_both", "Rèm 2 bên"
                       ["curtain_left", "Rèm 1 bên (đặt bên trái)"], ["curtain_right", "Rèm 1 bên (đặt bên phải)"]];
 const SENSOR_DOMAINS = ["sensor", "binary_sensor"];
 const SOLAR_STYLES = [["compact", "Thu nhỏ"], ["full", "Toàn màn hình"]];
+const CARD_SIZES = SOLAR_STYLES;     // máy lạnh / rèm: Thu nhỏ (chạm để mở lớp phủ) hoặc Toàn màn hình
 /* Cảm biến của Inverter: [role, nhãn, đơn vị gợi ý]. Role phải khớp ROLES trong solar.py. Công suất W/kW, sản lượng Wh/kWh... được tự đổi đơn vị. */
 const SOLAR_GROUPS = [
   ["Dàn pin PV1", [["pv1_voltage", "Điện áp PV1", "V"], ["pv1_current", "Dòng điện PV1", "A"], ["pv1_power", "Công suất PV1", "W"]]],
@@ -233,6 +234,10 @@ class ScreenHubPanel extends HTMLElement {
             <input class="devName" value="${esc(d.name)}" maxlength="24" title="${esc(d.entity_id)}" placeholder="${esc(d.entity_id.startsWith("solar.") ? "Hệ thống NLMT" : d.entity_id.startsWith("energy.") ? "Biểu đồ ĐNTT" : this._stateName(d.entity_id))}">
             ${d.entity_id.startsWith("cover.") ? `<select class="coverStyle" title="Kiểu hiển thị trên màn hình">${COVER_STYLES.map(([v, t]) =>
               `<option value="${v}" ${(d.cover_style || this._defaultCover(d.entity_id)) === v ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
+            ${d.entity_id.startsWith("cover.") ? `<select class="coverSize" title="Thẻ trên màn hình: thu nhỏ (chạm để mở) hoặc toàn màn hình">${CARD_SIZES.map(([v, t]) =>
+              `<option value="${v}" ${(d.cover_size || "full") === v ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
+            ${d.entity_id.startsWith("climate.") ? `<select class="climateStyle" title="Thẻ trên màn hình: thu nhỏ (chạm để mở) hoặc toàn màn hình">${CARD_SIZES.map(([v, t]) =>
+              `<option value="${v}" ${(d.climate_style || "full") === v ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
             ${d.entity_id.startsWith("weather.") ? `<select class="weatherStyle" title="Kiểu hiển thị trên màn hình">${WEATHER_STYLES.map(([v, t]) =>
               `<option value="${v}" ${(d.weather_style || "compact") === v ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
             ${d.entity_id.startsWith("solar.") ? `<select class="solarStyle" title="Kiểu hiển thị trên màn hình">${SOLAR_STYLES.map(([v, t]) =>
@@ -386,6 +391,8 @@ class ScreenHubPanel extends HTMLElement {
         const dev = { entity_id: eid, name: "", icon: "" };
         if (eid.startsWith("cover.")) dev.cover_style = this._defaultCover(eid);
         if (eid.startsWith("weather.")) dev.weather_style = "compact";
+        if (eid.startsWith("cover.")) dev.cover_size = "compact";
+        if (eid.startsWith("climate.")) dev.climate_style = "compact";
         r.devices.push(dev); this._touch(); };
       const add = () => {          // nút "＋ Thêm" / phím Enter: nhập đúng entity_id hoặc chỉ còn 1 gợi ý (Enter: lấy gợi ý đầu)
         const typed = inp.value.trim().toLowerCase(), list = matches();
@@ -413,6 +420,8 @@ class ScreenHubPanel extends HTMLElement {
         de.querySelector(".solarCfg")?.addEventListener("click", () => { this.s.solarCfg = d; this._render(); });
         de.querySelector(".weatherStyle")?.addEventListener("change", (e) => { d.weather_style = e.target.value; this._touch(); });
         de.querySelector(".coverStyle")?.addEventListener("change", (e) => { d.cover_style = e.target.value; this._touch(); });
+        de.querySelector(".coverSize")?.addEventListener("change", (e) => { d.cover_size = e.target.value; this._touch(); });
+        de.querySelector(".climateStyle")?.addEventListener("change", (e) => { d.climate_style = e.target.value; this._touch(); });
         de.querySelector(".dUp").addEventListener("click", () => { move(r.devices, di, -1); this._touch(); });
         de.querySelector(".dDown").addEventListener("click", () => { move(r.devices, di, 1); this._touch(); });
         de.querySelector(".delDev").addEventListener("click", () => { r.devices.splice(di, 1); this._touch(); });
