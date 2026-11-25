@@ -29,6 +29,13 @@ class ScreenHubDeviceView(HomeAssistantView):
                 return hub
         return None
 
+    def _key_known(self, key: str) -> bool:
+        """Khóa thuộc về một config entry (kể cả entry chưa nạp xong khi HA mới khởi động hoặc đang reload)."""
+        return any(
+            isinstance(e.data.get(CONF_KEY), str) and hmac.compare_digest(e.data[CONF_KEY], key)
+            for e in self.hass.config_entries.async_entries(DOMAIN)
+        )
+
     async def get(self, request: web.Request) -> web.WebSocketResponse:
         ws = web.WebSocketResponse(heartbeat=30)
         await ws.prepare(request)
@@ -39,7 +46,8 @@ class ScreenHubDeviceView(HomeAssistantView):
                 raise ValueError("thiếu auth")
             hub = self._find_hub(first["key"])
             if hub is None:
-                await ws.send_json({"type": "auth_invalid"})
+                # Khóa còn hợp lệ nhưng tích hợp chưa sẵn sàng -> màn hình giữ nguyên ghép cặp và tự kết nối lại sau vài giây
+                await ws.send_json({"type": "auth_wait" if self._key_known(first["key"]) else "auth_invalid"})
                 await ws.close()
                 return ws
             await ws.send_json({"type": "auth_ok", "name": hub.entry.title})

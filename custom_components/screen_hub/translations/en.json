@@ -5,12 +5,16 @@
       "user": {
         "title": "Add screen",
         "description": "Enter the IP address of the screen. Leave it empty if you have no screen yet and only want to preview the configuration panel.",
-        "data": {"host": "IP address"}
+        "data": {
+          "host": "IP address"
+        }
       },
       "pair": {
         "title": "Pair {name}",
         "description": "Enter the 6-digit code shown on the screen.",
-        "data": {"code": "Pairing code"}
+        "data": {
+          "code": "Pairing code"
+        }
       }
     },
     "error": {
@@ -19,7 +23,8 @@
     },
     "abort": {
       "already_configured": "This screen has already been added",
-      "cannot_connect": "Cannot connect to the screen"
+      "cannot_connect": "Cannot connect to the screen",
+      "repaired": "Screen paired again; floors, rooms and devices were kept"
     }
   }
 }

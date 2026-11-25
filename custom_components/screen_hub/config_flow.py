@@ -25,6 +25,8 @@ class ScreenHubConfigFlow(ConfigFlow, domain=DOMAIN):
         self._port = DEVICE_HTTP_PORT
         self._device_id = ""
         self._name = "Màn hình HA"
+        self._paired = True                  # màn hình đang giữ khóa ghép cặp (theo /info hoặc mDNS)
+        self._repair_entry_id = ""           # != "": ghép cặp lại cho mục đã có (giữ nguyên tầng / phòng / thiết bị)
 
     async def _fetch_info(self) -> bool:
         session = async_get_clientsession(self.hass)
@@ -36,7 +38,11 @@ class ScreenHubConfigFlow(ConfigFlow, domain=DOMAIN):
             return False
         self._device_id = info.get("id", "")
         self._name = info.get("name", self._name)
+        self._paired = bool(info.get("paired", True))
         return bool(self._device_id)
+
+    def _existing_entry(self):
+        return self.hass.config_entries.async_entry_for_domain_unique_id(DOMAIN, self._device_id)
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors = {}
@@ -51,7 +57,11 @@ class ScreenHubConfigFlow(ConfigFlow, domain=DOMAIN):
                     CONF_KEY: secrets.token_urlsafe(24)})
             if await self._fetch_info():
                 await self.async_set_unique_id(self._device_id)
-                self._abort_if_unique_id_configured()
+                entry = self._existing_entry()
+                if entry is not None:
+                    if self._paired:
+                        return self.async_abort(reason="already_configured")
+                    self._repair_entry_id = entry.entry_id      # màn hình đã xoá ghép cặp: ghép lại, giữ cấu hình cũ
                 return await self.async_step_pair()
             errors["base"] = "cannot_connect"
         return self.async_show_form(
@@ -67,7 +77,14 @@ class ScreenHubConfigFlow(ConfigFlow, domain=DOMAIN):
         if not self._device_id:
             return self.async_abort(reason="cannot_connect")
         await self.async_set_unique_id(self._device_id)
-        self._abort_if_unique_id_configured(updates={CONF_HOST: self._host, CONF_PORT: self._port})
+        entry = self._existing_entry()
+        if entry is not None:
+            paired = props.get("paired")                         # firmware mới báo qua mDNS; firmware cũ thì hỏi /info
+            if paired is None:
+                paired = "1" if (await self._fetch_info() and self._paired) else "0"
+            if paired == "1":
+                self._abort_if_unique_id_configured(updates={CONF_HOST: self._host, CONF_PORT: self._port})
+            self._repair_entry_id = entry.entry_id              # màn hình đang chờ ghép cặp: dùng lại mục cũ
         self.context["title_placeholders"] = {"name": self._name}
         return await self.async_step_pair()
 
@@ -82,6 +99,13 @@ class ScreenHubConfigFlow(ConfigFlow, domain=DOMAIN):
             try:
                 async with session.post(f"http://{self._host}:{self._port}/pair", json=body,
                                         timeout=aiohttp.ClientTimeout(total=8)) as r:
+                    if r.status == 200 and self._repair_entry_id:
+                        entry = self.hass.config_entries.async_get_entry(self._repair_entry_id)
+                        if entry is not None:
+                            self.hass.config_entries.async_update_entry(entry, data={
+                                **entry.data, CONF_HOST: self._host, CONF_PORT: self._port, CONF_KEY: key})
+                            await self.hass.config_entries.async_reload(entry.entry_id)
+                            return self.async_abort(reason="repaired")
                     if r.status == 200:
                         return self.async_create_entry(title=self._name, data={
                             CONF_DEVICE_ID: self._device_id, CONF_HOST: self._host,

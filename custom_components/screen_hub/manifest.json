@@ -9,6 +9,6 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/sdevice-vn/screen-hub/issues",
   "requirements": [],
-  "version": "0.5.3",
+  "version": "0.5.5",
   "zeroconf": ["_screenhub._tcp.local."]
 }
